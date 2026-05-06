@@ -36,7 +36,7 @@ import { runShapeEngine } from "./shapeEngine";
 import { generatePyTorchCode } from "./codegenPyTorch";
 import { toast } from "sonner";
 import { Brain, FlaskConical, Settings2, Microscope, PenTool, Compass, ChevronDown, ChevronRight } from "lucide-react";
-import { validateNNGraph, createNNTrainingWebSocket, fetchProfile, exportNNModel, saveNNGraph, fetchNNHistory, inspectNNModel } from "@/lib/api";
+import { validateNNGraph, createNNTrainingWebSocket, fetchProfile, exportNNModel, saveNNGraph, fetchNNHistory, inspectNNModel, listNNCheckpoints, loadNNCheckpoint } from "@/lib/api";
 import type { NNTrainEvent, NNInspectResult } from "@/lib/api";
 import { LabTab } from "./tabs/LabTab";
 import { OptimizeTab } from "./tabs/OptimizeTab";
@@ -436,6 +436,24 @@ export function NeuralNetView({ activeView }: { activeView?: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-restore: if FastAPI has no model in memory, load the most recent checkpoint
+  useEffect(() => {
+    (async () => {
+      try {
+        const history = await fetchNNHistory();
+        if (history.has_model) return;
+        const { checkpoints } = await listNNCheckpoints();
+        if (!checkpoints.length) return;
+        const newest = [...checkpoints].sort((a, b) => b.timestamp - a.timestamp)[0];
+        await loadNNCheckpoint(newest.filename);
+        reloadTrainingHistory();
+      } catch {
+        // no checkpoints or server unavailable
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Agent event: Checkpoint loaded ───────────────────────────────────────
   useEffect(() => {
     return onAgentEvent("nn:checkpointLoaded", () => {
@@ -780,7 +798,7 @@ export function NeuralNetView({ activeView }: { activeView?: string }) {
             solve:    { label: "Solve",    color: "#06b6d4", Icon: Compass },
           }[tab];
           const active = nnTab === tab;
-          const disabled = tab !== "design" && !hasModel && !(tab === "solve" && loadedSolution);
+          const disabled = tab !== "design" && !hasModel && tab !== "solve";
           return (
             <button
               key={tab}
@@ -828,7 +846,7 @@ export function NeuralNetView({ activeView }: { activeView?: string }) {
       )}
       {nnTab === "optimize" && (
         <div className="flex-1 min-h-0 flex">
-          <OptimizeTab hasModel={hasModel} />
+          <OptimizeTab hasModel={hasModel} onCheckpointLoaded={reloadTrainingHistory} />
         </div>
       )}
       {nnTab === "inspect" && (

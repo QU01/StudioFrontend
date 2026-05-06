@@ -207,7 +207,12 @@ export function SolveTab({ hasModel, loadedSolution }: SolveTabProps) {
   }, []);
 
   const handleLoadSaved = useCallback((sol: SavedSolution) => {
-    setResult(sol.result);
+    const r = sol.result as NNInverseDesignResult | null | Record<string, unknown>;
+    if (!r || typeof (r as NNInverseDesignResult).final_loss !== "number") {
+      toast.error(`"${sol.name}" was saved with an older version and has no result data. Re-run Solve and save again.`);
+      return;
+    }
+    setResult(r as NNInverseDesignResult);
     setResultTab("overview");
     toast.success(`Loaded: ${sol.name}`);
   }, []);
@@ -399,7 +404,7 @@ export function SolveTab({ hasModel, loadedSolution }: SolveTabProps) {
   }, [result]);
 
   // ── No model / not regression ─────────────────────────────────────────────
-  if (!loadedSolution && (!hasModel || (metaLoaded && !isRegression))) {
+  if (!result && !loadedSolution && (!hasModel || (metaLoaded && !isRegression))) {
     return (
       <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
         <div
@@ -1350,7 +1355,7 @@ export function SolveTab({ hasModel, loadedSolution }: SolveTabProps) {
                 style={{ background: "rgba(6,182,212,0.1)", border: "1px solid rgba(6,182,212,0.2)", color: "#06b6d4" }}
               >
                 <TrendingDown size={12} />
-                Loss: {result.final_loss.toFixed(6)}
+                Loss: {result.final_loss?.toFixed(6) ?? "—"}
               </div>
               <div
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-semibold"

@@ -32,6 +32,8 @@ import { ConfigPanel } from "./ConfigPanel";
 import { DeleteableEdge } from "./DeleteableEdge";
 import { DataPreviewModal } from "./DataPreviewModal";
 import { SaveModal } from "@/components/ui/SaveModal";
+import { useDemoStore } from "@/store/demoStore";
+import { DemoOverlay } from "@/components/demo/DemoOverlay";
 
 const nodeTypes: NodeTypes = {
   pipeline: PipelineNode,
@@ -70,6 +72,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentPipelineIdRef = useRef<number | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const { isDemoMode, toggle: toggleDemo, setCurrent: demoSetCurrent } = useDemoStore();
 
   // Re-fit only when this view becomes visible (not every time the node count changes —
   // that would snap the viewport back every time the user adds a node).
@@ -334,6 +337,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
         : nodes.map((n) => n.id);
 
       for (const nodeId of order) {
+        demoSetCurrent(nodeId);
         setNodes((nds) =>
           nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, status: "running" as const } } : n)
         );
@@ -347,6 +351,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
         }
         await new Promise((r) => setTimeout(r, 150));
       }
+      setTimeout(() => demoSetCurrent(null), 600);
 
       if (response.success) {
         toast.success("Pipeline executed successfully");
@@ -367,6 +372,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
         }),
       }).catch(() => { /* non-fatal — run still works without Django persistence */ });
     } catch (err) {
+      demoSetCurrent(null);
       if (err instanceof Error && err.name === "AbortError") {
         setNodes((nds) =>
           nds.map((n) =>
@@ -393,7 +399,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
       abortControllerRef.current = null;
       setIsRunning(false);
     }
-  }, [isRunning, nodes, edges, setNodes, currentPipelineId]);
+  }, [isRunning, nodes, edges, setNodes, currentPipelineId, demoSetCurrent]);
 
   // ── Partial execution: run pipeline starting from a specific node ────────
   const runFromNode = useCallback(async (startNodeId: string) => {
@@ -459,6 +465,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
         // Don't animate skipped nodes
         if (skipNodeIds.includes(nodeId)) continue;
 
+        demoSetCurrent(nodeId);
         setNodes((nds) =>
           nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, status: "running" as const } } : n)
         );
@@ -480,6 +487,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
         }
         await new Promise((r) => setTimeout(r, 150));
       }
+      setTimeout(() => demoSetCurrent(null), 600);
 
       const ranCount = order.filter((id) => !skipNodeIds.includes(id)).length;
       if (response.success) {
@@ -488,6 +496,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
         toast.error("Pipeline execution failed");
       }
     } catch (err) {
+      demoSetCurrent(null);
       if (err instanceof Error && err.name === "AbortError") {
         setNodes((nds) =>
           nds.map((n) =>
@@ -504,7 +513,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
       abortControllerRef.current = null;
       setIsRunning(false);
     }
-  }, [isRunning, nodes, edges, setNodes]);
+  }, [isRunning, nodes, edges, setNodes, demoSetCurrent]);
 
   // Low-level save: PUT if pipelineId is provided, POST otherwise.
   const savePipelineRequest = useCallback(
@@ -708,17 +717,28 @@ export function PipelineView({ activeView }: { activeView?: string }) {
   );
 
   return (
-    <div className="flex flex-col h-full">
-      <Toolbar
-        onAddNode={addNode}
-        onClear={clearCanvas}
-        onExecute={runPipeline}
-        onStop={stopPipeline}
-        onSave={handleQuickSave}
-        onSaveAs={handleSaveAs}
-        pipelineName={currentPipelineName}
-        isRunning={isRunning}
-      />
+    <div className="flex flex-col h-full relative">
+      {!isDemoMode && (
+        <>
+          <Toolbar
+            onAddNode={addNode}
+            onClear={clearCanvas}
+            onExecute={runPipeline}
+            onStop={stopPipeline}
+            onSave={handleQuickSave}
+            onSaveAs={handleSaveAs}
+            pipelineName={currentPipelineName}
+            isRunning={isRunning}
+          />
+          <button
+            onClick={toggleDemo}
+            className="absolute top-2 right-2 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#1a2535] hover:bg-[#1e3050] text-[#3AA0FF] border border-[#3AA0FF]/30 transition-colors"
+            title="Demo Mode (Ctrl+Shift+D)"
+          >
+            ◉ Demo
+          </button>
+        </>
+      )}
 
       <div className="flex flex-1 min-h-0">
         {/* React Flow Canvas */}
@@ -763,21 +783,23 @@ export function PipelineView({ activeView }: { activeView?: string }) {
           </ReactFlow>
         </div>
 
-        {/* Config / Preview Panel */}
-        <div className="w-[300px] shrink-0 bg-[#222a35] border-l border-white/5 flex flex-col">
-          <div className="px-4 py-3 border-b border-white/5 shrink-0">
-            <div className="text-[13px] font-semibold text-white/80">Node Inspector</div>
+        {/* Config / Preview Panel — hidden in demo mode */}
+        {!isDemoMode && (
+          <div className="w-[300px] shrink-0 bg-[#222a35] border-l border-white/5 flex flex-col">
+            <div className="px-4 py-3 border-b border-white/5 shrink-0">
+              <div className="text-[13px] font-semibold text-white/80">Node Inspector</div>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ConfigPanel
+                node={selectedNode}
+                columnNames={effectiveColumnNames}
+                numericColumns={effectiveNumericColumns}
+                datasetInfo={datasetInfo}
+                onParamsChange={updateNodeParams}
+              />
+            </div>
           </div>
-          <div className="flex-1 min-h-0">
-            <ConfigPanel
-              node={selectedNode}
-              columnNames={effectiveColumnNames}
-              numericColumns={effectiveNumericColumns}
-              datasetInfo={datasetInfo}
-              onParamsChange={updateNodeParams}
-            />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Data preview modal */}
@@ -801,6 +823,8 @@ export function PipelineView({ activeView }: { activeView?: string }) {
         descriptionLabel="Pipeline Description"
         initialName={saveAsMode ? `${currentPipelineName || "Pipeline"} (copy)` : currentPipelineName}
       />
+
+      <DemoOverlay />
     </div>
   );
 }

@@ -15,7 +15,7 @@ export const useDemoStore = create<DemoState>((set) => ({
   isDemoMode: false,
   currentNodeId: null,
   narrative: {},
-  toggle: () => set((s) => ({ isDemoMode: !s.isDemoMode })),
+  toggle: () => set((s) => ({ isDemoMode: !s.isDemoMode, currentNodeId: s.isDemoMode ? null : s.currentNodeId })),
   activate: () => set({ isDemoMode: true }),
   deactivate: () => set({ isDemoMode: false, currentNodeId: null }),
   setCurrent: (id) => set({ currentNodeId: id }),

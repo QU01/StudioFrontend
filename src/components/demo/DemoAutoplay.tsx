@@ -16,11 +16,11 @@ export function DemoAutoplay() {
 
   async function handleStart() {
     if (started.current) return;
-    started.current = true;
     setShowModal(false);
 
     try {
-      const template = await fetchPipelineTemplate(templateName) as any;
+      started.current = true;
+      const template = await fetchPipelineTemplate(templateName);
 
       if (template.demoNarrative) {
         setNarrative(template.demoNarrative as Record<string, string>);
@@ -31,14 +31,15 @@ export function DemoAutoplay() {
       await new Promise((r) => setTimeout(r, 350));
       loadPipeline({
         id: 0,
-        name: template.name ?? templateName,
-        nodes: template.nodes ?? [],
-        edges: template.edges ?? [],
+        name: (template.name as string) ?? templateName,
+        nodes: (template.nodes as any[]) ?? [],
+        edges: (template.edges as any[]) ?? [],
       });
       await new Promise((r) => setTimeout(r, 400));
       dispatchAgentEvent("pipeline:execute", {});
     } catch {
-      setShowModal(false);
+      started.current = false;
+      setShowModal(true);
     }
   }
 

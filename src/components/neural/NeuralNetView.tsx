@@ -101,13 +101,40 @@ export function NeuralNetView({ activeView }: { activeView?: string }) {
   // ── Load most recently saved architecture from Django on mount ───────────
   useEffect(() => {
     loadLatestArchitecture().then((arch) => {
-      if (arch?.config?.nodes && arch.config.nodes.length > 0) {
-        archIdRef.current = arch.id;
-        setNodes(arch.config.nodes);
-        setEdges(arch.config.edges ?? []);
-        if (arch.config.inputShape) setInputShape(arch.config.inputShape);
-      }
-      // If no Django data, the component already initialized from localStorage (lines above)
+      const savedNodes: any[] = arch?.config?.nodes ?? [];
+      if (savedNodes.length === 0) return;
+      archIdRef.current = arch!.id;
+      if (arch!.config.inputShape) setInputShape(arch!.config.inputShape);
+      // Reconstruct into proper React Flow node format (handles both flat {id,kind,params}
+      // from doSaveArchitecture and full RF nodes from older auto-saves)
+      const newNodes: Node<NeuralNodeData>[] = savedNodes
+        .filter((n) => {
+          const kind = n.kind ?? n.data?.kind;
+          return LAYER_META[kind as LayerKind];
+        })
+        .map((n, i) => {
+          const kind = (n.kind ?? n.data?.kind) as LayerKind;
+          const params = n.params ?? n.data?.params ?? {};
+          return {
+            id: n.id ?? `nn-load-${i}`,
+            type: "nnLayer",
+            position: n.position ?? { x: 260, y: 60 + i * 120 },
+            data: {
+              kind,
+              params: { ...defaultLayerParams(kind), ...params },
+            },
+          };
+        });
+      const savedEdges: any[] = arch!.config.edges ?? [];
+      const newEdges: Edge[] = savedEdges.map((e, i) => ({
+        id: e.id ?? `nn-load-edge-${i}`,
+        source: e.source,
+        target: e.target,
+        type: "deleteable",
+        style: { stroke: "#3b82f6", strokeWidth: 1.5 },
+      }));
+      setNodes(newNodes);
+      setEdges(newEdges);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -315,7 +342,12 @@ export function NeuralNetView({ activeView }: { activeView?: string }) {
     clearTimeout(archAutoSaveTimerRef.current);
     archAutoSaveTimerRef.current = setTimeout(async () => {
       const id = archIdRef.current;
-      const config = { nodes, edges, inputShape };
+      // Store flat node format (same as doSaveArchitecture) so loads always reconstruct correctly
+      const config = {
+        inputShape,
+        nodes: nodes.map((n) => ({ id: n.id, kind: n.data.kind, params: n.data.params, position: n.position })),
+        edges: edges.map((e) => ({ id: e.id, source: e.source, target: e.target })),
+      };
       try {
         const url = id
           ? `${DJANGO_API_BASE}/architectures/${id}/`

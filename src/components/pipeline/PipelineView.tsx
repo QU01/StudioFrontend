@@ -28,6 +28,7 @@ import { NODE_META, defaultParams, type NodeKind, type DatasetInfo } from "./nod
 import { onAgentEvent, agentNNTrainComplete, type AgentAddPipelineNode, type AgentDataLoaded, type LoadPipelineEvent } from "@/lib/agent-events";
 import { PipelineNode, type PipelineNodeData } from "./nodes/PipelineNode";
 import { Toolbar } from "./Toolbar";
+import { AutoMLPanel } from "./AutoMLPanel";
 import { ConfigPanel } from "./ConfigPanel";
 import { DeleteableEdge } from "./DeleteableEdge";
 import { DataPreviewModal } from "./DataPreviewModal";
@@ -62,6 +63,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
   const [datasetInfo, setDatasetInfo] = useState<DatasetInfo | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isAutoMLOpen, setIsAutoMLOpen] = useState(false);
   // When true, the modal is for "Save As" (forces creating a new pipeline even if one is loaded)
   const [saveAsMode, setSaveAsMode] = useState(false);
   // Metadata of the pipeline currently loaded/saved (null when the canvas has never been saved)
@@ -727,6 +729,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
             onStop={stopPipeline}
             onSave={handleQuickSave}
             onSaveAs={handleSaveAs}
+            onAutoML={() => setIsAutoMLOpen(true)}
             pipelineName={currentPipelineName}
             isRunning={isRunning}
           />
@@ -825,6 +828,12 @@ export function PipelineView({ activeView }: { activeView?: string }) {
       />
 
       <DemoOverlay />
+
+      <AutoMLPanel
+        isOpen={isAutoMLOpen}
+        onClose={() => setIsAutoMLOpen(false)}
+        columnNames={datasetInfo?.columns ?? []}
+      />
     </div>
   );
 }

@@ -57,6 +57,23 @@ export interface DemoDataset {
   column_names: string[];
 }
 
+export interface TemplateMetadata {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  tags: string[];
+  domain: string;
+  difficulty: string;
+  dataset_hint: string;
+}
+
+export async function fetchTemplatesList(): Promise<TemplateMetadata[]> {
+  const res = await fetchWithAuth(`${API_BASE}/api/templates`);
+  if (!res.ok) throw new Error("Failed to fetch templates");
+  return res.json();
+}
+
 export async function fetchDemoDatasets(): Promise<DemoDataset[]> {
   const res = await fetchWithAuth(`${API_BASE}/api/data/demo-datasets`);
   if (!res.ok) throw new Error("Failed to fetch demo datasets");
@@ -803,10 +820,46 @@ export async function solveInverseDesign(
   return res.json();
 }
 
+export interface AutoMLResult {
+  best_estimator: string;
+  best_config: Record<string, unknown>;
+  best_loss: number;
+  metric: string;
+  models_tried: Array<{ model: string; metric_value: number | null; duration: number | null }>;
+  task: string;
+}
+
+export async function runAutoML(target: string, time_budget: number, feature_cols: string[]): Promise<AutoMLResult> {
+  const res = await fetchWithAuth(`${API_BASE}/api/automl/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ target, time_budget, feature_cols }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "AutoML failed" }));
+    throw new Error(err.detail ?? "AutoML failed");
+  }
+  return res.json();
+}
+
 export async function fetchPipelineTemplate(name: string): Promise<Record<string, unknown>> {
-  const res = await fetch(`${API_BASE}/api/pipeline/templates/${name}`);
+  const res = await fetchWithAuth(`${API_BASE}/api/pipeline/templates/${name}`);
   if (!res.ok) throw new Error(`Template '${name}' not found`);
   return res.json();
+}
+
+export async function downloadSavedReport(filename: string): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/api/reports/download/${encodeURIComponent(filename)}`);
+  if (!res.ok) throw new Error("Report not found");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 export async function exportPDFReport(title: string = "Quasar Studio Report", data?: any): Promise<void> {

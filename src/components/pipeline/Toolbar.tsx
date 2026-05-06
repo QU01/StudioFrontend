@@ -2,7 +2,7 @@
 
 import {
   Database, Filter, Columns2, Eraser, BarChart2, Scissors, Brain, LineChart, Group, Binary, Hash, Network,
-  Trash2, Play, Save, Code2, RefreshCw, Square, Copy, FileText,
+  Trash2, Play, Save, Code2, RefreshCw, Square, Copy, FileText, Zap,
 } from "lucide-react";
 import { NODE_KIND_ORDER, NODE_META, type NodeKind } from "./nodeTypes";
 
@@ -18,11 +18,12 @@ interface ToolbarProps {
   onStop?: () => void;
   onSave?: () => void;
   onSaveAs?: () => void;
+  onAutoML?: () => void;
   pipelineName?: string;
   isRunning: boolean;
 }
 
-export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveAs, pipelineName, isRunning }: ToolbarProps) {
+export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveAs, onAutoML, pipelineName, isRunning }: ToolbarProps) {
   return (
     <div className="flex flex-col bg-[#1a2030] border-b border-white/10 shrink-0">
     {/* Title bar with current pipeline name */}
@@ -74,6 +75,19 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
       })()}
 
       <div className="ml-auto flex items-center gap-2">
+        {onAutoML && (
+          <button
+            onClick={onAutoML}
+            disabled={isRunning}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ background: "#7c3aed22", border: "1px solid #7c3aed66", color: "#a78bfa" }}
+            title="Auto-find the best model"
+          >
+            <Zap size={13} />
+            AutoML
+          </button>
+        )}
+
         {isRunning && onStop ? (
           <button
             onClick={onStop}

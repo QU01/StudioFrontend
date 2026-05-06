@@ -58,8 +58,10 @@ export default function Home() {
 
       {/* Scrollable main content */}
       <main
-        className={`relative overflow-hidden bg-[#181d23] transition-all duration-300 ${isDemoMode ? 'h-screen mt-0' : 'mt-[62px] h-[calc(100vh-62px)]'}`}
+        className="relative overflow-hidden bg-[#181d23] transition-all duration-300"
         style={{
+          height: isDemoMode ? '100vh' : 'calc(100vh - 62px)',
+          marginTop: isDemoMode ? 0 : 62,
           marginLeft: isDemoMode ? 0 : (sidebarOpen ? 240 : 70),
           marginRight: isDemoMode ? 0 : (chatOpen ? drawerWidth : 0),
         }}

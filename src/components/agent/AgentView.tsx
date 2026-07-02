@@ -2,16 +2,18 @@
 
 import { useEffect, useRef, useState, useCallback, KeyboardEvent } from "react";
 import dynamic from "next/dynamic";
-import { Send, Bot, User, Loader2, ChevronDown, ChevronRight, Wrench, CheckCircle, XCircle, X } from "lucide-react";
+import { Send, Bot, User, Loader2, ChevronDown, ChevronRight, Wrench, CheckCircle, XCircle, X, Settings } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   createAgentWebSocket,
+  restoreProviderFromBridge,
   type AgentWebSocket,
   type AgentEvent,
   type ChatMessage,
   type ToolCallDisplay,
 } from "@/lib/agent-api";
+import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import {
   agentAddPipelineNode,
   agentExecutePipeline,
@@ -355,6 +357,7 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
   const wsRef = useRef<AgentWebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -362,6 +365,12 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, isStreaming]);
+
+  // On mount, re-apply the saved (encrypted) provider + key to the backend so QUO
+  // works after a restart without the user re-pasting the key (D-24). No-op in web/dev.
+  useEffect(() => {
+    void restoreProviderFromBridge();
+  }, []);
 
   useEffect(() => {
     const ws = createAgentWebSocket(handleEvent);
@@ -460,7 +469,7 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
   const lastIsAssistant = messages[messages.length - 1]?.role === "assistant";
 
   return (
-    <div className="flex flex-col h-full" style={{ backgroundColor: "#181d23" }}>
+    <div className="relative flex flex-col h-full" style={{ backgroundColor: "#181d23" }}>
       {/* Header */}
       <div
         className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b"
@@ -489,15 +498,33 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
             </div>
           </div>
         </div>
-        {onClose && (
+        <div className="flex items-center gap-1">
           <button
-            onClick={onClose}
+            onClick={() => setShowSettings((v) => !v)}
+            aria-label="Ajustes del proveedor de IA"
+            title="Proveedor / modelo / clave"
             className="w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all"
+            style={showSettings ? { color: "var(--electric)" } : undefined}
           >
-            <X size={15} />
+            <Settings size={15} />
           </button>
-        )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/8 transition-all"
+            >
+              <X size={15} />
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Settings overlay — proveedor/modelo/clave (D-24) */}
+      {showSettings && (
+        <div className="absolute inset-0 z-20">
+          <SettingsPanel onClose={() => setShowSettings(false)} />
+        </div>
+      )}
 
       {/* Message area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, KeyboardEvent } from "react";
 import dynamic from "next/dynamic";
-import { Send, Bot, User, Loader2, ChevronDown, ChevronRight, Wrench, CheckCircle, XCircle, X, Settings } from "lucide-react";
+import { Send, Bot, User, Loader2, ChevronDown, ChevronRight, Wrench, CheckCircle, XCircle, X, Settings, ShieldAlert } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -358,6 +358,13 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  // Pending HITL confirmation requested by a destructive/costly tool (id → hint/tool/status).
+  const [confirmation, setConfirmation] = useState<{
+    id: string;
+    tool: string;
+    hint: string;
+    status: "pending" | "approved" | "rejected";
+  } | null>(null);
   const wsRef = useRef<AgentWebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -426,6 +433,20 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
         break;
       }
 
+      case "tool_confirmation": {
+        // Destructive/costly tool paused — show inline approve/reject prompt (HITL).
+        if (event.id) {
+          setConfirmation({
+            id: event.id,
+            tool: event.tool ?? "acción",
+            hint: event.hint ?? "Esta acción requiere tu confirmación.",
+            status: "pending",
+          });
+          setIsStreaming(false);
+        }
+        break;
+      }
+
       case "done": {
         setMessages((prev) => {
           const last = prev[prev.length - 1];
@@ -435,6 +456,8 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
           return prev;
         });
         setIsStreaming(false);
+        // Turn finished — clear any resolved confirmation prompt.
+        setConfirmation((prev) => (prev && prev.status !== "pending" ? null : prev));
         break;
       }
 
@@ -458,6 +481,18 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
     setIsStreaming(true);
     wsRef.current?.send(text, messages);
   }, [inputValue, isStreaming, messages]);
+
+  const respondConfirmation = useCallback(
+    (approved: boolean) => {
+      setConfirmation((prev) => {
+        if (!prev) return prev;
+        wsRef.current?.sendConfirmation(prev.id, approved);
+        if (approved) setIsStreaming(true); // approved → tool resumes, stream continues
+        return { ...prev, status: approved ? "approved" : "rejected" };
+      });
+    },
+    []
+  );
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -538,6 +573,59 @@ export function AgentChatDrawer({ onClose }: AgentChatDrawerProps) {
               <AssistantBubble key={msg.id} msg={msg} isStreaming={isStreaming && msg.id === "streaming"} />
             )
           )
+        )}
+
+        {/* HITL confirmation prompt — destructive/costly tool awaiting approval */}
+        {confirmation && (
+          <div
+            className="rounded-xl p-3 text-sm"
+            style={{
+              backgroundColor: "color-mix(in oklch, var(--quasar-warning, #F59E0B) 8%, #1e242d)",
+              border: "1px solid color-mix(in oklch, var(--quasar-warning, #F59E0B) 35%, transparent)",
+            }}
+          >
+            <div className="flex items-start gap-2">
+              <ShieldAlert size={15} className="mt-0.5 flex-shrink-0" style={{ color: "var(--quasar-warning, #F59E0B)" }} />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-white/90">Confirmación requerida</div>
+                <div className="text-white/60 text-[12px] mt-0.5">
+                  <span className="font-mono" style={{ color: "var(--electric)" }}>{confirmation.tool}</span>
+                  {" — "}
+                  {confirmation.hint}
+                </div>
+              </div>
+            </div>
+            {confirmation.status === "pending" ? (
+              <div className="flex gap-2 mt-2.5">
+                <button
+                  onClick={() => respondConfirmation(true)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-semibold text-white transition-all hover:scale-[1.02]"
+                  style={{ background: "linear-gradient(135deg, var(--electric), var(--electric-dim))" }}
+                >
+                  <CheckCircle size={13} /> Aprobar
+                </button>
+                <button
+                  onClick={() => respondConfirmation(false)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[12px] font-semibold transition-all hover:scale-[1.02]"
+                  style={{
+                    backgroundColor: "var(--surface-3)",
+                    color: "rgba(255,255,255,0.75)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
+                >
+                  <XCircle size={13} /> Rechazar
+                </button>
+              </div>
+            ) : (
+              <div
+                className="mt-2 text-[12px] font-medium flex items-center gap-1.5"
+                style={{ color: confirmation.status === "approved" ? "#4ade80" : "#f87171" }}
+              >
+                {confirmation.status === "approved" ? <CheckCircle size={13} /> : <XCircle size={13} />}
+                {confirmation.status === "approved" ? "Aprobado" : "Rechazado"}
+              </div>
+            )}
+          </div>
         )}
 
         {isStreaming && !lastIsAssistant && (

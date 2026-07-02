@@ -78,11 +78,16 @@ export async function restoreProviderFromBridge(): Promise<boolean> {
 }
 
 export interface AgentEvent {
-  type: "text_chunk" | "tool_start" | "tool_end" | "done" | "error";
+  type: "text_chunk" | "tool_start" | "tool_end" | "tool_confirmation" | "done" | "error";
   content?: string;
   tool?: string;
   input?: Record<string, unknown>;
   output?: string;
+  // HITL (tool_confirmation): the backend pauses a destructive/costly tool and asks
+  // the user to approve/reject. `id` is the function-call id echoed back in the
+  // {type:"confirmation", id, approved} reply; `hint` is a human-readable description.
+  hint?: string;
+  id?: string;
 }
 
 export interface ToolCallDisplay {
@@ -103,6 +108,9 @@ export interface ChatMessage {
 
 export interface AgentWebSocket {
   send: (message: string, history: ChatMessage[]) => void;
+  // HITL: reply to a tool_confirmation prompt. The router re-injects the decision
+  // into the ADK runner ({"type":"confirmation","id":...,"approved":bool}).
+  sendConfirmation: (id: string, approved: boolean) => void;
   close: () => void;
 }
 
@@ -160,6 +168,20 @@ export function createAgentWebSocket(onEvent: (event: AgentEvent) => void): Agen
           }
         }, 100);
         // Give up after 5s
+        setTimeout(() => clearInterval(interval), 5000);
+      }
+    },
+    sendConfirmation(id: string, approved: boolean) {
+      const payload = JSON.stringify({ type: "confirmation", id, approved });
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(payload);
+      } else {
+        const interval = setInterval(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(payload);
+            clearInterval(interval);
+          }
+        }, 100);
         setTimeout(() => clearInterval(interval), 5000);
       }
     },

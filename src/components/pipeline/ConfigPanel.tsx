@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { Settings2, Table2, AlertCircle, Target, Download, Expand, Loader2 } from "lucide-react";
-import { exportPipelineModel, API_BASE, fetchDemoDatasets, loadDemoDataset, loadSavedDataset, type DemoDataset } from "@/lib/api";
+import { exportPipelineModel, API_BASE, fetchDemoDatasets, loadDemoDataset, loadSavedDataset, downloadSavedReport, type DemoDataset } from "@/lib/api";
 import { DJANGO_API_BASE, fetchWithAuth } from "@/lib/auth";
 import { agentDataLoaded } from "@/lib/agent-events";
 import { CustomPythonEditorModal } from "./CustomPythonEditorModal";
@@ -210,6 +210,8 @@ function TrainNeuralNetworkSection({
     epochs: Number(params.epochs ?? 30),
     lr: Number(params.lr ?? 0.001),
     batch_size: Number(params.batch_size ?? 32),
+    use_pinn: Boolean(params.use_pinn ?? false),
+    physics_weight: Number(params.physics_weight ?? 0),
   });
 
   const [architectures, setArchitectures] = useState<any[]>([]);
@@ -269,6 +271,8 @@ function TrainNeuralNetworkSection({
       epochs: Number(params.epochs ?? 30),
       lr: Number(params.lr ?? 0.001),
       batch_size: Number(params.batch_size ?? 32),
+      use_pinn: Boolean(params.use_pinn ?? false),
+      physics_weight: Number(params.physics_weight ?? 0),
     });
     setModalOpen(true);
   };
@@ -347,7 +351,7 @@ function TrainNeuralNetworkSection({
         {effectiveTargets.length > 0 && (
           <div className="text-[11px] text-white/50 space-y-1 bg-[#1a2030] p-2 rounded-lg border border-white/5">
             <div><span className="font-bold uppercase tracking-wider text-white/30 text-[9px] mr-1">TGT:</span> {effectiveTargets.join(", ")}</div>
-            <div><span className="font-bold uppercase tracking-wider text-white/30 text-[9px] mr-1">CFG:</span> {(params.task as string) || "Classification"} | {params.epochs} epochs | bs={params.batch_size}</div>
+            <div><span className="font-bold uppercase tracking-wider text-white/30 text-[9px] mr-1">CFG:</span> {(params.task as string) || "Classification"} | {String(params.epochs)} epochs | bs={String(params.batch_size)}</div>
           </div>
         )}
         <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-[11px]" style={{ background: params.architecture_id ? "rgba(10,88,202,0.08)" : "rgba(34,197,94,0.08)", border: `1px solid ${params.architecture_id ? "rgba(10,88,202,0.2)" : "rgba(34,197,94,0.2)"}` }}>
@@ -1000,6 +1004,48 @@ function NodeConfig({
   }
 }
 
+function ExportPDFResult({ metrics }: { metrics: Record<string, unknown> }) {
+  const [downloading, setDownloading] = useState(false);
+  const filename = metrics.filename as string | undefined;
+  const sizeKB = typeof metrics.size_bytes === "number" ? (metrics.size_bytes / 1024).toFixed(1) : "?";
+
+  const handleDownload = async () => {
+    if (!filename) return;
+    setDownloading(true);
+    try { await downloadSavedReport(filename); }
+    catch { /* ignore */ }
+    finally { setDownloading(false); }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-5 px-6">
+      <div className="w-14 h-14 rounded-2xl bg-[#f472b6]/10 border border-[#f472b6]/20 flex items-center justify-center">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f472b6" strokeWidth="1.8">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="9" y1="15" x2="15" y2="15" />
+          <line x1="9" y1="11" x2="15" y2="11" />
+        </svg>
+      </div>
+      <div className="text-center">
+        <div className="text-white font-semibold text-[15px] mb-1">Reporte generado</div>
+        <div className="text-[#a5a8ad] text-[12px] font-mono">{filename ?? "report.pdf"}</div>
+        <div className="text-[#6b7280] text-[11px] mt-0.5">{sizeKB} KB · {String(metrics.pages ?? "")}</div>
+      </div>
+      <button
+        onClick={handleDownload}
+        disabled={!filename || downloading}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all
+          bg-[#f472b6]/10 hover:bg-[#f472b6]/20 border border-[#f472b6]/25 hover:border-[#f472b6]/50
+          text-[#f472b6] disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+        {downloading ? "Descargando…" : "Descargar PDF"}
+      </button>
+    </div>
+  );
+}
+
 function PreviewTable({ result, nodeKind, nodeId }: { result: NodeResult, nodeKind: string, nodeId: string }) {
   if (result.status === "error") {
     return (
@@ -1179,6 +1225,11 @@ function PreviewTable({ result, nodeKind, nodeId }: { result: NodeResult, nodeKi
         />
       </div>
     );
+  }
+
+  // ── Export PDF: download card ─────────────────────────────────────────────
+  if (result.metrics && (result.metrics as Record<string, unknown>).task === "export_pdf") {
+    return <ExportPDFResult metrics={result.metrics as Record<string, unknown>} />;
   }
 
   if (!result.preview || result.preview.length === 0) {
@@ -1374,7 +1425,7 @@ function PreviewTable({ result, nodeKind, nodeId }: { result: NodeResult, nodeKi
             <div className="grid grid-cols-2 gap-2 text-center my-2">
               <div className="bg-[#1a2030] rounded-lg p-2 border border-white/5">
                 <div className="text-[14px] font-bold text-white/90">
-                  {result.metrics.task === "regression" ? result.metrics.mse : (result.metrics.accuracy * 100).toFixed(2) + "%"}
+                  {result.metrics.task === "regression" ? result.metrics.mse : ((result.metrics.accuracy ?? 0) * 100).toFixed(2) + "%"}
                 </div>
                 <div className="text-[9px] uppercase tracking-wider text-white/40">
                   {result.metrics.task === "regression" ? "MSE Loss" : "Accuracy"}

@@ -715,7 +715,7 @@ export function NeuralNetView({ activeView }: { activeView?: string }) {
       target: trainConfig.task === "classification" ? trainConfig.target : (trainConfig.target_cols[0] ?? ""),
       target_cols: trainConfig.task === "regression" ? trainConfig.target_cols : [trainConfig.target],
       feature_cols: trainConfig.feature_cols.length > 0 ? trainConfig.feature_cols : undefined,
-      task: trainConfig.task,
+      task: trainConfig.task as "classification" | "regression",
       epochs: trainConfig.epochs,
       lr: trainConfig.lr,
       batch_size: trainConfig.batch_size,

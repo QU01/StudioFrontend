@@ -194,10 +194,11 @@ export function RunForm({ designerName, version, onClose, onRunComplete }: RunFo
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl"
+        className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-xl"
         style={{
           background: "var(--surface-2)",
           border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "var(--shadow-elevated)",
         }}
         onClick={(ev) => ev.stopPropagation()}
       >

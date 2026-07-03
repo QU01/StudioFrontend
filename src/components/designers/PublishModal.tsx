@@ -226,17 +226,20 @@ export function PublishModal({ isOpen, onClose, onPublished }: PublishModalProps
   const publishBlocked = validationErrors.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)" }}
+    >
       <div
-        className="w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden relative flex flex-col"
-        style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.10)", maxHeight: "90vh" }}
+        className="w-full max-w-2xl rounded-xl overflow-hidden relative flex flex-col"
+        style={{
+          background: "var(--surface-2)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "var(--shadow-elevated)",
+          maxHeight: "90vh",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          className="absolute top-0 left-0 w-full h-1"
-          style={{ background: "linear-gradient(to right, transparent, var(--electric), transparent)", opacity: 0.7 }}
-        />
-
         {/* Header */}
         <div className="flex items-center justify-between p-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <h3 style={{ fontFamily: "var(--quasar-font-sans)", fontSize: "18px", fontWeight: 600, color: "var(--ink-primary)" }}>

@@ -140,7 +140,7 @@ export function DesignersView({ onNavigate }: DesignersViewProps) {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl p-6 flex flex-col gap-4"
+                className="rounded-xl p-6 flex flex-col gap-4"
                 style={{
                   background: "var(--surface-2)",
                   border: "1px solid rgba(255,255,255,0.06)",

@@ -189,7 +189,11 @@ export function ImportDialog({
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : close())}>
       <DialogContent
         className="max-w-lg"
-        style={{ background: "var(--surface-2)", color: "var(--ink-primary)" }}
+        style={{
+          background: "var(--surface-2)",
+          color: "var(--ink-primary)",
+          boxShadow: "var(--shadow-elevated)",
+        }}
       >
         {/* ── Paso: selección + verificación de hash ── */}
         {(step === "select" || step === "importing") && (
@@ -208,7 +212,7 @@ export function ImportDialog({
               type="button"
               disabled={inspecting || step === "importing"}
               onClick={() => fileInputRef.current?.click()}
-              className="w-full rounded-xl px-4 py-8 flex flex-col items-center gap-3 transition-all disabled:opacity-50"
+              className="w-full rounded-lg px-4 py-8 flex flex-col items-center gap-3 transition-all disabled:opacity-50"
               style={{
                 background: "var(--surface-3)",
                 border: "1px dashed var(--surface-3)",

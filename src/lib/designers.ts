@@ -353,6 +353,208 @@ export function reportUrl(reportFile: string): string {
   return `${API_BASE}/api/designers/reports/${encodeURIComponent(reportFile)}`;
 }
 
+// ── Import / Export / Eliminar (portabilidad — FastAPI, D-35/D-36/D-37) ───────
+
+/** Un nodo con código custom divulgado por el inspect (D-36). */
+export interface CustomNodeDisclosure {
+  node_id: string;
+  code: string;
+}
+
+/** Resultado de inspeccionar un `.qsd` ANTES de importar (POST /import/inspect). */
+export interface InspectResult {
+  status: "new" | "duplicate" | "conflict";
+  name: string;
+  version: string;
+  sha256: string;
+  spec_schema_version: string | null;
+  custom_nodes: CustomNodeDisclosure[];
+  migration_needed: boolean;
+}
+
+/** Resultado de importar un `.qsd` (POST /import). */
+export interface ImportResult {
+  status: "imported" | "duplicate";
+  name: string;
+  version: string;
+  sha256: string;
+  custom_nodes: CustomNodeDisclosure[];
+}
+
+export type InspectOutcome =
+  | { ok: true; data: InspectResult }
+  | { error: string };
+
+export type ImportOutcome =
+  | { ok: true; data: ImportResult }
+  | { conflict: string }
+  | { validationErrors: ValidationError[] }
+  | { error: string };
+
+/**
+ * Inspecciona un `.qsd` SIN registrar nada (D-36). Devuelve la clasificación de
+ * colisión (new/duplicate/conflict), la divulgación de nodos custom y si necesita
+ * migración de esquema. Multipart: campo `file`. NO fijamos Content-Type
+ * (`fetchWithAuth` detecta FormData).
+ */
+export async function inspectQsd(file: File | Blob): Promise<InspectOutcome> {
+  const form = new FormData();
+  const name = file instanceof File ? file.name : "designer.qsd";
+  form.append("file", file, name);
+  let res: Response;
+  try {
+    res = await fetchWithAuth(`${API_BASE}/api/designers/import/inspect`, {
+      method: "POST",
+      body: form,
+    });
+  } catch {
+    return { error: "No se pudo contactar el backend. Verifica que esté activo." };
+  }
+  if (res.status === 422) {
+    const body = await res.json().catch(() => ({}));
+    const detail = typeof body?.detail === "string" ? body.detail : "El archivo .qsd es inválido.";
+    return { error: detail };
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const detail = typeof body?.detail === "string" ? body.detail : "No se pudo inspeccionar el archivo.";
+    return { error: detail };
+  }
+  return { ok: true, data: (await res.json()) as InspectResult };
+}
+
+/**
+ * Importa un `.qsd` al registry (D-37/D-40b). Unión discriminada:
+ *   - 200 → { ok, data } (imported | duplicate)
+ *   - 409 → { conflict } (inmutabilidad — hash distinto para el mismo name@version)
+ *   - 422 → { validationErrors } (spec inválida) | { error } (zip/manifest inválido)
+ */
+export async function importQsd(file: File | Blob): Promise<ImportOutcome> {
+  const form = new FormData();
+  const name = file instanceof File ? file.name : "designer.qsd";
+  form.append("file", file, name);
+  let res: Response;
+  try {
+    res = await fetchWithAuth(`${API_BASE}/api/designers/import`, {
+      method: "POST",
+      body: form,
+    });
+  } catch {
+    return { error: "No se pudo contactar el backend. Verifica que esté activo." };
+  }
+  if (res.status === 409) {
+    const body = await res.json().catch(() => ({}));
+    const detail = typeof body?.detail === "string" ? body.detail : "Conflicto de inmutabilidad.";
+    return { conflict: detail };
+  }
+  if (res.status === 422) {
+    const body = await res.json().catch(() => ({}));
+    const errors = body?.detail?.errors;
+    if (Array.isArray(errors) && errors.length > 0) {
+      return { validationErrors: errors as ValidationError[] };
+    }
+    const detail = typeof body?.detail === "string" ? body.detail : "El archivo .qsd es inválido.";
+    return { error: detail };
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const detail = typeof body?.detail === "string" ? body.detail : "No se pudo importar el Diseñador.";
+    return { error: detail };
+  }
+  return { ok: true, data: (await res.json()) as ImportResult };
+}
+
+/**
+ * Exporta una versión: descarga el `.qsd` byte-idéntico del registry (D-31/D-35).
+ * Descarga vía blob URL con nombre `{name}@{version}.qsd`. Devuelve el nombre del
+ * archivo descargado, o lanza si el fetch falla.
+ */
+export async function exportDesigner(name: string, version: string): Promise<string> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/api/designers/${encodeURIComponent(name)}/${encodeURIComponent(version)}/export`,
+  );
+  if (!res.ok) {
+    throw new Error("No se pudo exportar el Diseñador.");
+  }
+  const blob = await res.blob();
+  const filename = `${name}@${version}.qsd`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  return filename;
+}
+
+/**
+ * Elimina un Diseñador: borra los bundles del registry FastAPI y las filas espejo
+ * del índice Django (DELETE /designers/{id}/). El disco es la verdad (D-30); el
+ * borrado del índice Django es best-effort.
+ */
+export async function deleteDesigner(name: string, djangoId?: number): Promise<number> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/api/designers/${encodeURIComponent(name)}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    throw new Error("No se pudo eliminar el Diseñador del registry.");
+  }
+  const body = (await res.json().catch(() => ({}))) as { deleted_versions?: number };
+
+  // Espejo Django: borra la fila Designer (cascade a sus versiones). Best-effort.
+  if (djangoId != null && getAccessToken()) {
+    try {
+      await fetchWithAuth(`${DJANGO_API_BASE}/designers/${djangoId}/`, {
+        method: "DELETE",
+      });
+    } catch {
+      // best-effort: el disco ya es la verdad (D-30).
+    }
+  }
+  return body.deleted_versions ?? 0;
+}
+
+/**
+ * Refleja en el índice Django un Diseñador recién importado (D-30, espejo). Reusa
+ * la mecánica de `mirrorIndexAfterPublish`: find-or-create Designer por name +
+ * POST de la fila de versión. Best-effort — no lanza.
+ */
+export async function mirrorIndexAfterImport(result: ImportResult): Promise<void> {
+  if (result.status !== "imported") return; // duplicate → nada que reflejar
+  if (!getAccessToken()) return;
+  try {
+    const existing = await listDesigners();
+    let designer = existing.find((d) => d.name === result.name);
+    if (!designer) {
+      const createRes = await fetchWithAuth(`${DJANGO_API_BASE}/designers/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: result.name, description: "" }),
+      });
+      if (!createRes.ok) return;
+      designer = (await createRes.json()) as Designer;
+    }
+    if (!designer?.id) return;
+    await fetchWithAuth(`${DJANGO_API_BASE}/designer-versions/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        designer: designer.id,
+        version: result.version,
+        sha256: result.sha256,
+        spec_schema_version: "1.0",
+        bundle_path: "",
+        metadata: { custom_nodes: result.custom_nodes.map((n) => n.node_id) },
+      }),
+    });
+  } catch {
+    // best-effort: el disco es la verdad (D-30).
+  }
+}
+
 // ── Historial de runs (Django ExecutionRun — D-43) ────────────────────────────
 
 /**

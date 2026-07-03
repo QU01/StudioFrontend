@@ -6,17 +6,27 @@
 
 import { useState } from "react";
 import { MoreVertical } from "lucide-react";
-import type { Designer } from "@/lib/designers";
+import { toast } from "sonner";
+import { exportDesigner, deleteDesigner, type Designer } from "@/lib/designers";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface DesignerCardProps {
   designer: Designer;
   onRun?: (designer: Designer) => void;
+  /** Refresca la lista tras eliminar (el disco es la verdad, D-30). */
+  onChanged?: () => void;
 }
 
 function latestVersion(d: Designer): string {
@@ -39,10 +49,40 @@ function formatDate(iso: string | undefined): string {
   }
 }
 
-export function DesignerCard({ designer, onRun }: DesignerCardProps) {
+export function DesignerCard({ designer, onRun, onChanged }: DesignerCardProps) {
   const [hover, setHover] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const versionCount = designer.versions?.length ?? 0;
   const chip = `${designer.name}@${latestVersion(designer)}`;
+
+  async function handleExport() {
+    const version = latestVersion(designer);
+    if (version === "—") {
+      toast.error("Este Diseñador no tiene versiones para exportar.");
+      return;
+    }
+    try {
+      const filename = await exportDesigner(designer.name, version);
+      toast.success(`Diseñador exportado: ${filename}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo exportar el Diseñador.");
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await deleteDesigner(designer.name, designer.id);
+      toast.success(`Diseñador eliminado: ${designer.name}`);
+      setConfirmDelete(false);
+      onChanged?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo eliminar el Diseñador.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div
@@ -94,9 +134,13 @@ export function DesignerCard({ designer, onRun }: DesignerCardProps) {
               <MoreVertical size={16} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {/* Deshabilitadas hasta el plan 06 — presentes pero disabled, sin ocultar. */}
-              <DropdownMenuItem disabled>Exportar .qsd</DropdownMenuItem>
-              <DropdownMenuItem disabled variant="destructive">
+              <DropdownMenuItem onSelect={() => void handleExport()}>
+                Exportar .qsd
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => setConfirmDelete(true)}
+              >
                 Eliminar
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -153,6 +197,51 @@ export function DesignerCard({ designer, onRun }: DesignerCardProps) {
           Ejecutar
         </button>
       </div>
+
+      {/* Diálogo destructivo de eliminación (única acción destructiva de la fase). */}
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent
+          className="max-w-md"
+          style={{ background: "var(--surface-2)", color: "var(--ink-primary)" }}
+        >
+          <DialogHeader>
+            <DialogTitle style={{ fontFamily: "var(--quasar-font-sans)", color: "var(--error)" }}>
+              Eliminar Diseñador
+            </DialogTitle>
+            <DialogDescription
+              style={{ fontFamily: "var(--quasar-font-sans)", color: "var(--ink-muted)" }}
+            >
+              Esto elimina &apos;{designer.name}&apos; y sus {versionCount}{" "}
+              {versionCount === 1 ? "versión" : "versiones"} del registry local. Los
+              archivos .qsd que exportaste no se tocan. Esta acción no se puede
+              deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-end gap-2 mt-2">
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={() => void handleDelete()}
+              className="px-4 py-2 rounded-lg text-[13px] font-semibold transition-all disabled:opacity-50"
+              style={{ background: "var(--error)", color: "#0A0E14" }}
+            >
+              {deleting ? "Eliminando…" : "Eliminar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(false)}
+              className="px-4 py-2 rounded-lg text-[13px] font-medium transition-all"
+              style={{
+                background: "transparent",
+                color: "var(--ink-muted)",
+                border: "1px solid var(--surface-3)",
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

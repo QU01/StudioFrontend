@@ -8,11 +8,31 @@
 // Español, dark, marca por variables CSS. Honestidad de claims per RQ-G-3.
 
 import { useCallback, useEffect, useState } from "react";
-import { Package } from "lucide-react";
+import { Package, PackageOpen } from "lucide-react";
 import { listDesigners, type Designer } from "@/lib/designers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DesignerCard } from "./DesignerCard";
 import { DesignerDetail } from "./DesignerDetail";
+import { ImportDialog } from "./ImportDialog";
+
+// API de Electron expuesta por preload (__quasar__). Opcional: solo en el shell.
+interface QuasarBridge {
+  onOpenQsd?: (cb: (path: string) => void) => void;
+  readQsdFile?: (path: string) => Promise<string>;
+}
+declare global {
+  interface Window {
+    __quasar__?: QuasarBridge & Record<string, unknown>;
+  }
+}
+
+/** Decodifica base64 (de Electron readQsdFile) a un File .qsd. */
+function base64ToQsdFile(base64: string, name: string): File {
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new File([bytes], name, { type: "application/octet-stream" });
+}
 
 interface DesignersViewProps {
   onNavigate?: (view: string) => void;
@@ -25,6 +45,8 @@ export function DesignersView({ onNavigate }: DesignersViewProps) {
   const [state, setState] = useState<LoadState>("loading");
   // Vista de detalle DENTRO de la vista (export estático, sin router — D-21).
   const [selected, setSelected] = useState<Designer | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -41,6 +63,28 @@ export function DesignersView({ onNavigate }: DesignersViewProps) {
     load();
   }, [load]);
 
+  // Doble clic .qsd en Electron (D-35): el main process envía "open-qsd" con el
+  // path; leemos el archivo vía IPC y abrimos el MISMO flujo de import.
+  useEffect(() => {
+    const bridge = typeof window !== "undefined" ? window.__quasar__ : undefined;
+    if (!bridge?.onOpenQsd || !bridge.readQsdFile) return;
+    bridge.onOpenQsd(async (path: string) => {
+      try {
+        const base64 = await bridge.readQsdFile!(path);
+        const name = path.split(/[\\/]/).pop() || "designer.qsd";
+        setImportFile(base64ToQsdFile(base64, name));
+        setImportOpen(true);
+      } catch {
+        // silencioso: si falla la lectura, el usuario puede importar manualmente.
+      }
+    });
+  }, []);
+
+  const openImport = useCallback(() => {
+    setImportFile(null);
+    setImportOpen(true);
+  }, []);
+
   // Detalle del Diseñador (tabs Versiones | Historial + RunForm) — plan 05.
   if (selected) {
     return <DesignerDetail designer={selected} onBack={() => setSelected(null)} />;
@@ -50,30 +94,44 @@ export function DesignersView({ onNavigate }: DesignersViewProps) {
     <div className="min-h-full" style={{ background: "var(--surface-1)" }}>
       <div className="max-w-6xl mx-auto px-8 pt-10 pb-8">
         {/* View header */}
-        <div className="mb-8">
-          <h1
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1
+              style={{
+                fontFamily: "var(--quasar-font-display)",
+                fontSize: "25px",
+                fontWeight: 600,
+                lineHeight: 1.15,
+                color: "var(--ink-primary)",
+              }}
+            >
+              Diseñadores
+            </h1>
+            <p
+              className="mt-2 max-w-xl"
+              style={{
+                fontFamily: "var(--quasar-font-sans)",
+                fontSize: "14px",
+                color: "var(--ink-muted)",
+                lineHeight: 1.5,
+              }}
+            >
+              Artefactos reutilizables que empaquetan tus datos, tu física y tu
+              pipeline. Publica desde la vista Pipeline para verlos aquí.
+            </p>
+          </div>
+          <button
+            onClick={openImport}
+            className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all"
             style={{
-              fontFamily: "var(--quasar-font-display)",
-              fontSize: "25px",
-              fontWeight: 600,
-              lineHeight: 1.15,
-              color: "var(--ink-primary)",
-            }}
-          >
-            Diseñadores
-          </h1>
-          <p
-            className="mt-2 max-w-xl"
-            style={{
-              fontFamily: "var(--quasar-font-sans)",
-              fontSize: "14px",
+              background: "transparent",
               color: "var(--ink-muted)",
-              lineHeight: 1.5,
+              border: "1px solid var(--surface-3)",
             }}
           >
-            Artefactos reutilizables que empaquetan tus datos, tu física y tu
-            pipeline. Publica desde la vista Pipeline para verlos aquí.
-          </p>
+            <PackageOpen size={16} />
+            Importar Diseñador
+          </button>
         </div>
 
         {/* ── Loading: 3 skeleton cards ── */}
@@ -175,9 +233,8 @@ export function DesignersView({ onNavigate }: DesignersViewProps) {
                 Ir a Pipeline
               </button>
               <button
-                disabled
-                title="Disponible en este milestone — flujo de import"
-                className="px-4 py-2 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={openImport}
+                className="px-4 py-2 rounded-lg text-[13px] font-medium transition-all"
                 style={{
                   background: "transparent",
                   color: "var(--ink-muted)",
@@ -194,11 +251,23 @@ export function DesignersView({ onNavigate }: DesignersViewProps) {
         {state === "ready" && designers.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {designers.map((d) => (
-              <DesignerCard key={d.id} designer={d} onRun={setSelected} />
+              <DesignerCard
+                key={d.id}
+                designer={d}
+                onRun={setSelected}
+                onChanged={load}
+              />
             ))}
           </div>
         )}
       </div>
+
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        initialFile={importFile}
+        onImported={load}
+      />
     </div>
   );
 }

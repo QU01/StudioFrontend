@@ -13,7 +13,8 @@
 
 import { useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import type { Designer, DesignerVersion } from "@/lib/designers";
+import { toast } from "sonner";
+import { exportDesigner, type Designer, type DesignerVersion } from "@/lib/designers";
 import {
   Table,
   TableBody,
@@ -56,6 +57,15 @@ export function DesignerDetail({ designer, onBack }: DesignerDetailProps) {
   const [runFor, setRunFor] = useState<DesignerVersion | null>(null);
   // Bump para refrescar el historial tras una corrida exitosa (callback del RunForm).
   const [historyNonce, setHistoryNonce] = useState(0);
+
+  async function handleExport(version: string) {
+    try {
+      const filename = await exportDesigner(designer.name, version);
+      toast.success(`Diseñador exportado: ${filename}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo exportar el Diseñador.");
+    }
+  }
 
   return (
     <div className="min-h-full" style={{ background: "var(--surface-1)" }}>
@@ -192,9 +202,8 @@ export function DesignerDetail({ designer, onBack }: DesignerDetailProps) {
                               Ejecutar
                             </button>
                             <button
-                              disabled
-                              title="Disponible en un milestone próximo — exportar .qsd"
-                              className="px-3 py-1.5 rounded-md text-[13px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                              onClick={() => void handleExport(v.version)}
+                              className="px-3 py-1.5 rounded-md text-[13px] font-medium transition-all"
                               style={{
                                 background: "transparent",
                                 color: "var(--ink-muted)",

@@ -8,6 +8,8 @@ import { Dashboard } from "@/components/dashboard/dashboard";
 import { DataView } from "@/components/data/DataView";
 import { PipelineView } from "@/components/pipeline/PipelineView";
 import { DashboardBuilderView } from "@/components/dashboard-builder/DashboardBuilderView";
+import { TemplateGallery } from "@/components/templates/TemplateGallery";
+import { DesignersView } from "@/components/designers/DesignersView";
 import { AgentChatDrawer } from "@/components/agent/AgentView";
 
 // NeuralNetView reads localStorage during initialization — skip SSR to avoid hydration mismatch
@@ -71,6 +73,12 @@ export default function Home() {
         <div style={{ display: activeView === "pipeline"  ? "flex" : "none", height: "100%", flexDirection: "column" }}><PipelineView activeView={activeView} /></div>
         <div style={{ display: activeView === "neural"    ? "flex" : "none", height: "100%", flexDirection: "column" }}><NeuralNetView activeView={activeView} /></div>
         <div style={{ display: activeView === "dashboard-builder" ? "flex" : "none", height: "100%", flexDirection: "column" }}><DashboardBuilderView /></div>
+        <div style={{ display: activeView === "templates" ? "block" : "none", height: "100%", overflowY: "auto" }}>
+          <TemplateGallery onNavigate={setActiveView} />
+        </div>
+        <div style={{ display: activeView === "designers" ? "block" : "none", height: "100%", overflowY: "auto" }}>
+          <DesignersView onNavigate={setActiveView} />
+        </div>
       </main>
 
       {/* Agent chat drawer — fixed right panel */}

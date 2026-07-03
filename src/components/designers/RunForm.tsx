@@ -461,6 +461,10 @@ function FieldRow({ entrada, value, fileName, onValue, onFile }: FieldRowProps) 
 
 function ResultPanel({ result }: { result: RunResult }) {
   const metrics = flattenMetrics(result.results);
+  // Las 1-2 métricas de cabecera se leen como un instrumento de ingeniería:
+  // numeral mono grande, valor en --cyan (data-viz), label eyebrow en --ink-dim.
+  const headline = metrics.slice(0, 2);
+  const rest = metrics.slice(2);
 
   return (
     <div className="flex flex-col gap-4">
@@ -480,9 +484,62 @@ function ResultPanel({ result }: { result: RunResult }) {
         </span>
       </div>
 
+      {/* Readout de cabecera — el payoff de la corrida en grande. */}
+      {headline.length > 0 && (
+        <div
+          className="grid gap-3"
+          style={{ gridTemplateColumns: `repeat(${headline.length}, minmax(0, 1fr))` }}
+        >
+          {headline.map(([k, v]) => (
+            <div
+              key={k}
+              className="rounded-md px-4 py-3 flex flex-col gap-1"
+              style={{ background: "var(--surface-3)", border: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <span
+                className="truncate"
+                style={{
+                  fontFamily: "var(--quasar-font-mono)",
+                  fontSize: "11px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.15em",
+                  color: "var(--ink-dim)",
+                }}
+                title={k}
+              >
+                {k}
+              </span>
+              <span
+                className="truncate"
+                style={{
+                  fontFamily: "var(--quasar-font-mono)",
+                  fontSize: "26px",
+                  fontWeight: 700,
+                  lineHeight: 1.1,
+                  color: "var(--cyan)",
+                }}
+                title={v}
+              >
+                {v}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Fingerprint truncado + tooltip del hash completo */}
       <div className="flex flex-col gap-1">
-        <span style={{ fontSize: "12px", color: "var(--ink-dim)" }}>Fingerprint</span>
+        <span
+          style={{
+            fontFamily: "var(--quasar-font-mono)",
+            fontSize: "11px",
+            textTransform: "uppercase",
+            letterSpacing: "0.15em",
+            color: "var(--ink-dim)",
+          }}
+        >
+          Fingerprint
+        </span>
         <span
           title={result.fingerprint}
           style={{
@@ -496,13 +553,13 @@ function ResultPanel({ result }: { result: RunResult }) {
         </span>
       </div>
 
-      {/* Métricas clave */}
-      {metrics.length > 0 && (
+      {/* Métricas restantes en lista */}
+      {rest.length > 0 && (
         <div
-          className="rounded-lg overflow-hidden"
+          className="rounded-md overflow-hidden"
           style={{ background: "var(--surface-3)", border: "1px solid rgba(255,255,255,0.06)" }}
         >
-          {metrics.map(([k, v], i) => (
+          {rest.map(([k, v], i) => (
             <div
               key={k}
               className="flex items-center justify-between px-4 py-2"
@@ -513,7 +570,7 @@ function ResultPanel({ result }: { result: RunResult }) {
                 style={{
                   fontFamily: "var(--quasar-font-mono)",
                   fontSize: "12px",
-                  color: "var(--ink-primary)",
+                  color: "var(--cyan)",
                 }}
               >
                 {v}

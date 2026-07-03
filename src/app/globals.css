@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--quasar-font-sans);
+  --font-mono: var(--quasar-font-mono);
+  --font-heading: var(--quasar-font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,16 +46,27 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  /* Quasar custom color tokens */
+  /* Quasar brand token aliases for Tailwind utility classes */
   --color-electric: var(--electric);
   --color-electric-bright: var(--electric-bright);
   --color-electric-dim: var(--electric-dim);
   --color-cyan: var(--cyan);
+  --color-cyan-glow: var(--cyan-glow);
   --color-magenta: var(--magenta);
   --color-surface-0: var(--surface-0);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-ink-primary: var(--ink-primary);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-dim: var(--ink-dim);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  /* Quasar font families */
+  --quasar-font-display: var(--font-orbitron), sans-serif;
+  --quasar-font-sans:    var(--font-inter), sans-serif;
+  --quasar-font-mono:    var(--font-jetbrains-mono), monospace;
 }
 
 :root {
@@ -94,57 +105,94 @@
 }
 
 .dark {
-  /* ── Quasar Studio — Midnight Blue Dark Theme ── */
-  --background: oklch(0.13 0.025 260);
-  --foreground: oklch(0.95 0.01  260);
-  --card: oklch(0.16 0.025 260);
-  --card-foreground: oklch(0.95 0.01 260);
-  --popover: oklch(0.16 0.025 260);
-  --popover-foreground: oklch(0.95 0.01 260);
-  --primary: oklch(0.68 0.24 260);
-  --primary-foreground: oklch(0.98 0.005 260);
-  --secondary: oklch(0.20 0.04 260);
-  --secondary-foreground: oklch(0.93 0.01 260);
-  --muted: oklch(0.19 0.03 260);
-  --muted-foreground: oklch(0.55 0.03 260);
-  --accent: oklch(0.65 0.18 230);
-  --accent-foreground: oklch(0.98 0.005 260);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0.01 260);
-  --border: oklch(0.24 0.04 260);
-  --input: oklch(0.24 0.04 260);
-  --ring: oklch(0.68 0.24 260);
-  --chart-1: oklch(0.68 0.24 260);
-  --chart-2: oklch(0.72 0.14 220);
-  --chart-3: oklch(0.55 0.15 250);
-  --chart-4: oklch(0.72 0.12 200);
-  --chart-5: oklch(0.50 0.20 280);
-  --sidebar: oklch(0.09 0.03 260);
-  --sidebar-foreground: oklch(0.93 0.01 260);
-  --sidebar-primary: oklch(0.68 0.24 260);
-  --sidebar-primary-foreground: oklch(0.98 0.005 260);
-  --sidebar-accent: oklch(0.18 0.04 260);
-  --sidebar-accent-foreground: oklch(0.93 0.01 260);
-  --sidebar-border: oklch(0.22 0.04 260);
-  --sidebar-ring: oklch(0.68 0.24 260);
+  /* ── Quasar Brand System — Midnight Blue Dark Theme v1.0 ── */
 
-  /* ── Quasar surface layers ── */
-  --surface-0: oklch(0.09 0.03  260);
-  --surface-1: oklch(0.13 0.03  260);
-  --surface-2: oklch(0.17 0.035 260);
-  --surface-3: oklch(0.22 0.04  260);
+  /* ── Shadcn/UI base tokens mapped to brand ── */
+  --background:              #181D23;
+  --foreground:              #F5F7FA;
+  --card:                    #1A2332;
+  --card-foreground:         #F5F7FA;
+  --popover:                 #1A2332;
+  --popover-foreground:      #F5F7FA;
+  --primary:                 #3AA0FF;
+  --primary-foreground:      #F5F7FA;
+  --secondary:               #222A35;
+  --secondary-foreground:    #F5F7FA;
+  --muted:                   #1A2332;
+  --muted-foreground:        #78909C;
+  --accent:                  #5CC8E8;
+  --accent-foreground:       #F5F7FA;
+  --destructive:             #EF4444;
+  --destructive-foreground:  #F5F7FA;
+  --border:                  #222A35;
+  --input:                   #222A35;
+  --ring:                    #3AA0FF;
+  --chart-1:                 #3AA0FF;
+  --chart-2:                 #5CC8E8;
+  --chart-3:                 #00E5FF;
+  --chart-4:                 #E23EC0;
+  --chart-5:                 #F59E0B;
+  --sidebar:                 #0A0E14;
+  --sidebar-foreground:      #F5F7FA;
+  --sidebar-primary:         #3AA0FF;
+  --sidebar-primary-foreground: #F5F7FA;
+  --sidebar-accent:          #1A2332;
+  --sidebar-accent-foreground: #F5F7FA;
+  --sidebar-border:          #222A35;
+  --sidebar-ring:            #3AA0FF;
 
-  /* ── Accent palette ── */
-  --electric:        oklch(0.68 0.24  260);
-  --electric-bright: oklch(0.75 0.22  260);
-  --electric-dim:    oklch(0.50 0.18  260);
-  --cyan:            oklch(0.72 0.14  220);
-  --magenta:         oklch(0.60 0.25  330);
+  /* ── Quasar surface layers (brand manual exact values) ── */
+  --surface-0: #0A0E14;   /* App shell / deepest — oklch(0.13 0.025 260) */
+  --surface-1: #181D23;   /* Canvas default     — oklch(0.16 0.025 260) */
+  --surface-2: #1A2332;   /* Cards / panels     — oklch(0.20 0.030 260) */
+  --surface-3: #222A35;   /* Inputs / hover     — oklch(0.24 0.040 260) */
 
-  /* ── Glow tokens ── */
-  --glow-electric: oklch(0.68 0.24 260 / 0.30);
-  --glow-cyan:     oklch(0.72 0.14 220 / 0.25);
-  --glow-subtle:   oklch(0.68 0.24 260 / 0.08);
+  /* ── Accent palette (brand manual exact hex) ── */
+  --electric:        #3AA0FF;  /* PRIMARY CTA · oklch(0.68 0.24 260) */
+  --electric-bright: #69B9FF;  /* Hover highlight */
+  --electric-dim:    #1A5BA0;  /* Muted / secondary */
+  --cyan:            #5CC8E8;  /* SECONDARY · oklch(0.72 0.14 220) */
+  --cyan-glow:       #00E5FF;  /* Hero / glow effects · oklch(0.85 0.16 200) */
+  --magenta:         #E23EC0;  /* RESERVED · oklch(0.60 0.25 330) */
+
+  /* ── Ink tokens (canonical Plans/brand/tokens.css v1.0) ── */
+  --ink-primary: #F5F7FA;  /* 14.5:1 on surface-0 · AAA */
+  --ink-muted:   #B0BEC5;  /* Secondary text, descriptions, captions */
+  --ink-dim:     #78909C;  /* Tertiary text, labels, timestamps, disabled */
+
+  /* ── Semantic colors ── */
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --error:   #EF4444;
+
+  /* ── Glow shadows ── */
+  --glow-electric: 0 0 16px rgba(58, 160, 255, 0.45);
+  --glow-cyan:     0 0 16px rgba(0, 229, 255, 0.35);
+  --glow-magenta:  0 0 16px rgba(226, 62, 192, 0.40);
+  --glow-subtle:   0 0 8px rgba(58, 160, 255, 0.12);
+
+  /* ── Gradient tokens ── */
+  --gradient-brand:   linear-gradient(135deg, #1A5BA0, #3AA0FF, #5CC8E8);
+  --gradient-text:    linear-gradient(135deg, #3AA0FF, #00E5FF, #5CC8E8);
+  --gradient-glow-bg: radial-gradient(ellipse at 60% 40%, rgba(58,160,255,0.12), transparent 70%);
+  --gradient-bar:     linear-gradient(to bottom, #3AA0FF, #5CC8E8);
+
+  /* ── Typography scale ── */
+  --text-4xl:  clamp(2.5rem, 5vw, 3.06rem);  /* ~49px · lh 1.15 · Hero H1 */
+  --text-2xl:  1.94rem;   /* ~31px · lh 1.2  · Section H2 */
+  --text-xl:   1.56rem;   /* ~25px · lh 1.3  · Subsection H3 */
+  --text-lg:   1.25rem;   /* ~20px · lh 1.4  · Lead paragraph */
+  --text-base: 1rem;      /* ~16px · lh 1.5  · Body */
+  --text-sm:   0.875rem;  /* ~14px · lh 1.5  · Caption */
+  --text-xs:   0.75rem;   /* ~12px           · Eyebrow / mono labels */
+
+  /* ── Spacing scale (4px base) ── */
+  --space-1:  4px;   --space-2:  8px;   --space-3:  12px;
+  --space-4:  16px;  --space-5:  20px;  --space-6:  24px;
+  --space-8:  32px;  --space-10: 40px;  --space-12: 48px;
+
+  /* ── Border radii ── */
+  --radius-sm: 4px;  --radius-md: 8px;  --radius-lg: 12px;
 }
 
 @layer base {
@@ -155,14 +203,12 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-sans;
+    font-family: var(--quasar-font-sans);
   }
 }
 
 /* ══════════════════════════════════════════════════════════
    QUASAR STUDIO — Layout CSS
-   Mirrors the old project's SCSS structure; colours swapped
-   to the new midnight-blue palette.
    ══════════════════════════════════════════════════════════ */
 
 /* ── Sidebar ─────────────────────────────────────────────── */
@@ -176,7 +222,7 @@
   top: 0;
   z-index: 9;
   background-color: var(--surface-0);
-  border-right: 1px solid color-mix(in oklch, white 6%, transparent);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Brand strip (logo + title) */
@@ -186,15 +232,16 @@
   gap: 10px;
   padding: 0 0 14px 0;
   margin: 15px 10px 0 10px;
-  border-bottom: 1px solid color-mix(in oklch, white 8%, transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 #left-sidebar .navbar-brand span {
+  font-family: var(--quasar-font-display);
   font-size: 18px;
-  font-weight: 600;
-  color: var(--foreground);
+  font-weight: 700;
+  color: var(--ink-primary);
   vertical-align: middle;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.05em;
 }
 
 /* Scrollable area */
@@ -205,12 +252,12 @@
   -ms-overflow-style: none;
 }
 .sidebar-scroll::-webkit-scrollbar          { width: 0; background-color: var(--surface-0); }
-.sidebar-scroll::-webkit-scrollbar-thumb    { border-radius: 5px; background: var(--surface-1); }
+.sidebar-scroll::-webkit-scrollbar-thumb    { border-radius: 5px; background: var(--surface-2); }
 
 /* User account block */
 .user-account {
   margin: 20px 10px;
-  color: oklch(0.62 0.01 260);
+  color: var(--ink-dim);
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -232,11 +279,11 @@
 
 /* User dropdown */
 .user-account .user-dropdown {
-  border-radius: 0.55rem;
-  box-shadow: 0 2px 20px 0 oklch(0 0 0 / 0.5);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.5);
   border: 1px solid var(--border);
   padding: 10px 0;
-  background-color: var(--surface-1);
+  background-color: var(--surface-2);
   width: 185px;
   position: absolute;
   top: 50px;
@@ -245,7 +292,7 @@
 }
 
 .user-account .user-dropdown .divider {
-  border-bottom: 1px solid color-mix(in oklch, white 8%, transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   margin: 8px 0;
 }
 
@@ -258,29 +305,31 @@
   background: none;
   border: none;
   cursor: pointer;
+  font-family: var(--quasar-font-sans);
   font-size: 13px;
-  color: var(--muted-foreground);
+  color: var(--ink-muted);
   text-align: left;
   transition: color 0.2s;
 }
-.user-account .user-dropdown button:hover { color: var(--foreground); }
-.user-account .user-dropdown button.danger { color: oklch(0.65 0.20 25); }
+.user-account .user-dropdown button:hover { color: var(--ink-primary); }
+.user-account .user-dropdown button.danger { color: var(--error); }
 
 /* Nav section */
 .sidebar-nav { margin: 0 12px; }
 
 .sidebar-divider {
   margin: 6px 10px;
-  border-bottom: 1px solid color-mix(in oklch, white 6%, transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Section headers — "Main", "App", etc. */
+/* Section headers — mono uppercase eyebrow style per brand manual */
 .sidebar-nav .nav-header {
-  font-size: 11px;
-  font-weight: 600;
+  font-family: var(--quasar-font-mono);
+  font-size: 10px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.13em;
-  color: oklch(0.85 0.01 260 / 0.35);
+  letter-spacing: 0.20em;
+  color: var(--ink-dim);
   padding: 18px 14px 5px;
   margin: 0;
   line-height: 1;
@@ -295,29 +344,31 @@
   width: 100%;
   padding: 9px 14px;
   margin-bottom: 1px;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   background: transparent;
   border: none;
   cursor: pointer;
+  font-family: var(--quasar-font-sans);
   font-size: 14px;
-  color: oklch(0.62 0.01 260);
+  color: var(--ink-muted);
   text-align: left;
   position: relative;
-  transition: color 0.2s;
+  transition: color 0.2s, background 0.2s;
 }
 
 .sidebar-nav .nav-item:hover {
-  color: oklch(0.88 0.01 260);
+  color: var(--ink-primary);
+  background: var(--surface-3);
 }
 
-/* Active item — Oculux style: transparent bg, white text, left bar */
+/* Active item — transparent bg, ink-primary text, left gradient bar */
 .sidebar-nav .nav-item.active {
-  color: var(--foreground);
+  color: var(--ink-primary);
   font-weight: 500;
   background: transparent;
 }
 
-/* Left accent bar */
+/* Left accent bar — electric → cyan gradient */
 .sidebar-nav .nav-item.active::before {
   content: '';
   position: absolute;
@@ -327,16 +378,16 @@
   width: 3px;
   height: 18px;
   border-radius: 0 2px 2px 0;
-  background: linear-gradient(to bottom, var(--electric), var(--cyan));
-  box-shadow: 0 0 6px var(--glow-electric);
+  background: var(--gradient-bar);
+  box-shadow: var(--glow-electric);
 }
 
 .sidebar-nav .nav-item .nav-icon {
-  color: oklch(0.55 0.02 260);
+  color: var(--ink-dim);
   flex-shrink: 0;
   transition: color 0.2s;
 }
-.sidebar-nav .nav-item:hover .nav-icon { color: oklch(0.75 0.04 260); }
+.sidebar-nav .nav-item:hover .nav-icon { color: var(--electric); }
 .sidebar-nav .nav-item.active .nav-icon { color: var(--electric); }
 
 /* Username toggle button */
@@ -348,12 +399,13 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--foreground);
+  font-family: var(--quasar-font-sans);
+  color: var(--ink-primary);
   font-weight: 600;
   font-size: 14px;
 }
 .user-name-btn:hover { color: var(--electric); }
-.user-name-btn .caret { font-size: 10px; color: oklch(0.52 0.01 260); margin-top: 1px; }
+.user-name-btn .caret { font-size: 10px; color: var(--ink-dim); margin-top: 1px; }
 
 /* ── Top Navbar ──────────────────────────────────────────── */
 
@@ -368,7 +420,7 @@
   height: 62px;
   padding: 0;
   margin: 0;
-  border-bottom: 1px solid color-mix(in oklch, white 8%, transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: stretch;
 }
@@ -384,7 +436,7 @@
 .top-navbar .navbar-left  { display: flex; align-items: center; flex: 1; }
 .top-navbar .navbar-right { display: inline-flex; align-items: center; }
 
-/* Hamburger-only strip (logo stays in sidebar) */
+/* Hamburger strip */
 .top-navbar .navbar-btn {
   display: flex;
   align-items: center;
@@ -398,7 +450,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: oklch(0.85 0.01 260 / 0.45);
+  color: var(--ink-dim);
   padding: 4px 6px;
   line-height: 1;
   display: flex;
@@ -407,9 +459,9 @@
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
-.top-navbar .navbar-btn .btn-toggle-offcanvas:hover { color: var(--foreground); }
+.top-navbar .navbar-btn .btn-toggle-offcanvas:hover { color: var(--electric); }
 
 .top-navbar .navbar-btn .btn-toggle-offcanvas span {
   display: block;
@@ -434,13 +486,13 @@
   position: relative;
 }
 
-/* icon-menu — the core nav icon button style */
+/* icon-menu */
 .icon-menu {
   transition: color 0.2s;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: oklch(0.85 0.01 260 / 0.45);
+  color: var(--ink-dim);
   padding: 20px 14px;
   position: relative;
   cursor: pointer;
@@ -450,10 +502,10 @@
 
 .icon-menu:hover,
 .icon-menu.active {
-  color: var(--foreground);
+  color: var(--ink-primary);
 }
 
-/* Notification badge dot — Oculux style: small pill above icon */
+/* Notification badge dot */
 .notification-dot {
   border-radius: 3px;
   color: white;
@@ -464,39 +516,42 @@
   top: 6px;
   right: 2px;
   text-align: center;
+  font-family: var(--quasar-font-mono);
   font-size: 8px;
   font-weight: 700;
   padding: 0 3px;
 }
 
-/* Colour variants for notification dots */
+/* Badge color variants */
 .bg-electric  { background-color: var(--electric); }
 .bg-cyan      { background-color: var(--cyan); }
-.bg-green     { background-color: oklch(0.72 0.19 155); }
-.bg-orange    { background-color: oklch(0.70 0.18 60); }
+.bg-cyan-glow { background-color: var(--cyan-glow); }
+.bg-success   { background-color: var(--success); }
+.bg-warning   { background-color: var(--warning); }
 .bg-magenta   { background-color: var(--magenta); }
 
-/* Dropdown panels attached to icon-menu items */
+/* Dropdown panels */
 .icon-menu-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
   z-index: 50;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background-color: var(--surface-1);
+  background-color: var(--surface-2);
   border: 1px solid var(--border);
-  box-shadow: 0 2px 20px 0 oklch(0 0 0 / 0.5);
+  box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Dropdown header band (coloured strip) */
+/* Dropdown header band */
 .icon-menu-dropdown .dropdown-header {
   display: flex;
   align-items: center;
   height: 56px;
   padding: 10px 20px;
-  border-bottom: 1px solid color-mix(in oklch, white 6%, transparent);
-  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--ink-primary);
+  font-family: var(--quasar-font-sans);
   font-weight: 600;
   font-size: 14px;
 }
@@ -504,16 +559,16 @@
 .icon-menu-dropdown .dropdown-header.blue {
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--electric) 40%, var(--surface-1)) 0%,
-    color-mix(in oklch, var(--electric) 85%, var(--surface-1)) 100%
+    color-mix(in srgb, var(--electric) 40%, var(--surface-2)) 0%,
+    color-mix(in srgb, var(--electric) 85%, var(--surface-2)) 100%
   );
 }
 
 .icon-menu-dropdown .dropdown-header.green {
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, oklch(0.72 0.19 155) 40%, var(--surface-1)) 0%,
-    color-mix(in oklch, oklch(0.72 0.19 155) 85%, var(--surface-1)) 100%
+    color-mix(in srgb, var(--success) 40%, var(--surface-2)) 0%,
+    color-mix(in srgb, var(--success) 85%, var(--surface-2)) 100%
   );
 }
 
@@ -523,17 +578,17 @@
   align-items: flex-start;
   gap: 12px;
   padding: 12px 20px;
-  border-bottom: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   text-decoration: none;
   transition: background 0.15s;
   cursor: pointer;
 }
-.feeds-item:hover { background: var(--surface-2); }
+.feeds-item:hover { background: var(--surface-3); }
 
 .feeds-left {
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -542,10 +597,10 @@
 }
 
 .feeds-body { flex: 1; min-width: 0; }
-.feeds-body .title { font-size: 13px; font-weight: 500; color: var(--foreground); }
-.feeds-body small  { font-size: 11px; color: var(--muted-foreground); }
+.feeds-body .title { font-size: 13px; font-weight: 500; color: var(--ink-primary); }
+.feeds-body small  { font-family: var(--quasar-font-mono); font-size: 11px; color: var(--ink-muted); }
 
-.feeds-time { font-size: 10px; color: oklch(0.50 0.01 260); flex-shrink: 0; }
+.feeds-time { font-family: var(--quasar-font-mono); font-size: 10px; color: var(--ink-dim); flex-shrink: 0; }
 
 /* Gradient accent line at navbar bottom */
 .top-navbar .progress-container {
@@ -591,8 +646,8 @@
 }
 
 @keyframes glow-breathe {
-  0%, 100% { box-shadow: 0 0 8px var(--glow-subtle); }
-  50%      { box-shadow: 0 0 22px var(--glow-electric); }
+  0%, 100% { box-shadow: var(--glow-subtle); }
+  50%      { box-shadow: var(--glow-electric); }
 }
 
 @keyframes shimmer-slide {
@@ -600,7 +655,6 @@
   to   { background-position: -200% center; }
 }
 
-/* Register custom property for conic-gradient animation */
 @property --gradient-angle {
   syntax: "<angle>";
   initial-value: 0deg;
@@ -621,7 +675,6 @@
     animation: gradient-rotate 3s linear infinite;
   }
 
-  /* Rotating conic-gradient border — apply to a p-[1px] wrapper */
   .gradient-border-animated {
     background: conic-gradient(
       from var(--gradient-angle),
@@ -634,21 +687,19 @@
     animation: gradient-rotate 3s linear infinite;
   }
 
-  /* Subtle shimmer text effect */
   .text-shimmer {
-    background: linear-gradient(
-      90deg,
-      var(--electric),
-      var(--electric-bright),
-      var(--cyan),
-      var(--electric)
-    );
+    background: var(--gradient-text);
     background-size: 200% auto;
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: shimmer-slide 3s linear infinite;
   }
+
+  /* Quasar font utility classes */
+  .font-display { font-family: var(--quasar-font-display); }
+  .font-body    { font-family: var(--quasar-font-sans); }
+  .font-code    { font-family: var(--quasar-font-mono); }
 }
 
 /* ── React Flow dark theme overrides ── */
@@ -658,27 +709,27 @@
   box-shadow: none;
 }
 .react-flow__controls-button {
-  background: #222a35 !important;
+  background: var(--surface-3) !important;
   border: 1px solid rgba(255,255,255,0.1) !important;
-  color: rgba(255,255,255,0.5) !important;
-  fill: rgba(255,255,255,0.5) !important;
-  border-radius: 6px !important;
+  color: var(--ink-muted) !important;
+  fill: var(--ink-muted) !important;
+  border-radius: var(--radius-sm) !important;
   margin-bottom: 4px;
 }
 .react-flow__controls-button:hover {
-  background: #2a3240 !important;
-  color: #00f0ff !important;
-  fill: #00f0ff !important;
+  background: var(--surface-2) !important;
+  color: var(--cyan-glow) !important;
+  fill: var(--cyan-glow) !important;
 }
 .react-flow__minimap {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .react-flow__edge-path {
-  stroke: #007bff;
+  stroke: var(--electric);
 }
 .react-flow__connection-path {
-  stroke: #00f0ff;
+  stroke: var(--cyan-glow);
 }
 
 /* ── Neural Network Builder — custom edge ── */
@@ -686,12 +737,11 @@
   to { stroke-dashoffset: -18; }
 }
 
-/* Show delete button when hovering over the edge group */
 .react-flow__edge:hover .edge-delete-btn,
 .react-flow__edge.selected .edge-delete-btn {
   opacity: 1 !important;
-  background: #ef4444 !important;
-  border-color: #ef4444 !important;
+  background: var(--error) !important;
+  border-color: var(--error) !important;
   color: #fff !important;
 }
 
@@ -717,17 +767,17 @@ html.demo-mode main {
   margin-top: 0 !important;
   height: 100vh !important;
 }
-html.demo-mode body { background: #0F1419 !important; }
+html.demo-mode body { background: var(--surface-0) !important; }
 html.demo-mode { overflow: hidden; scrollbar-width: none; }
 html.demo-mode ::-webkit-scrollbar { display: none; }
 
-/* Node halo: electric-blue pulse when a node is actively running in demo */
+/* Node halo: electric-blue pulse during demo */
 .node-halo {
   animation: halo-pulse 1.4s ease-out infinite;
 }
 
 @keyframes halo-pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(58, 160, 255, 0.80); }
+  0%   { box-shadow: 0 0 0 0    rgba(58, 160, 255, 0.80); }
   70%  { box-shadow: 0 0 20px 8px rgba(58, 160, 255, 0.15); }
   100% { box-shadow: 0 0 0 24px rgba(58, 160, 255, 0); }
 }
@@ -739,11 +789,11 @@ html.demo-mode ::-webkit-scrollbar { display: none; }
   left: 0;
   right: 0;
   z-index: 9999;
-  background: rgba(15, 20, 25, 0.92);
+  background: rgba(10, 14, 20, 0.92);
   backdrop-filter: blur(8px);
   padding: 20px 40px;
   font-size: 28px;
-  color: #ffffff;
+  color: var(--ink-primary);
   font-weight: 500;
   letter-spacing: 0.01em;
   animation: demo-overlay-in 0.3s ease-out;
@@ -768,16 +818,17 @@ html.demo-mode ::-webkit-scrollbar { display: none; }
 }
 
 .demo-start-button {
-  background: linear-gradient(135deg, #1a4a8a, #3AA0FF);
-  color: #fff;
+  background: var(--gradient-brand);
+  color: var(--ink-primary);
+  font-family: var(--quasar-font-display);
   font-size: 22px;
   font-weight: 600;
   padding: 18px 48px;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   letter-spacing: 0.04em;
-  box-shadow: 0 0 40px rgba(58, 160, 255, 0.4);
+  box-shadow: var(--glow-electric);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 

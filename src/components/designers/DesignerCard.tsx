@@ -176,7 +176,7 @@ export function DesignerCard({ designer, onRun, onChanged }: DesignerCardProps) 
           style={{
             fontFamily: "var(--quasar-font-mono)",
             fontSize: "12px",
-            color: "var(--ink-dim)",
+            color: "var(--ink-muted)",
           }}
         >
           <span>{versionCount} {versionCount === 1 ? "versión" : "versiones"}</span>

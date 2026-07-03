@@ -132,6 +132,8 @@ export interface PublishSuccess {
   name: string;
   version: string;
   sha256: string;
+  /** Ruta del bundle en el registry de disco (D-30) — la aporta el backend. */
+  path?: string | null;
   manifest: PublishManifest;
 }
 
@@ -260,7 +262,7 @@ export async function mirrorIndexAfterPublish(result: PublishSuccess): Promise<v
         sha256: result.sha256,
         spec_schema_version:
           (manifest.spec_schema_version as string | undefined) ?? "1.0",
-        bundle_path: (manifest.path as string | undefined) ?? "",
+        bundle_path: result.path ?? (manifest.path as string | undefined) ?? "",
         metadata: {
           custom_nodes: manifest.custom_nodes,
           data_ref: manifest.data_ref,
@@ -378,6 +380,8 @@ export interface ImportResult {
   name: string;
   version: string;
   sha256: string;
+  /** Ruta del bundle en el registry de disco (D-30) — la aporta el backend. */
+  path?: string | null;
   custom_nodes: CustomNodeDisclosure[];
 }
 
@@ -546,7 +550,7 @@ export async function mirrorIndexAfterImport(result: ImportResult): Promise<void
         version: result.version,
         sha256: result.sha256,
         spec_schema_version: "1.0",
-        bundle_path: "",
+        bundle_path: result.path ?? "",
         metadata: { custom_nodes: result.custom_nodes.map((n) => n.node_id) },
       }),
     });

@@ -12,6 +12,7 @@ import { Package } from "lucide-react";
 import { listDesigners, type Designer } from "@/lib/designers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DesignerCard } from "./DesignerCard";
+import { DesignerDetail } from "./DesignerDetail";
 
 interface DesignersViewProps {
   onNavigate?: (view: string) => void;
@@ -22,6 +23,8 @@ type LoadState = "loading" | "error" | "ready";
 export function DesignersView({ onNavigate }: DesignersViewProps) {
   const [designers, setDesigners] = useState<Designer[]>([]);
   const [state, setState] = useState<LoadState>("loading");
+  // Vista de detalle DENTRO de la vista (export estático, sin router — D-21).
+  const [selected, setSelected] = useState<Designer | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -37,6 +40,11 @@ export function DesignersView({ onNavigate }: DesignersViewProps) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Detalle del Diseñador (tabs Versiones | Historial + RunForm) — plan 05.
+  if (selected) {
+    return <DesignerDetail designer={selected} onBack={() => setSelected(null)} />;
+  }
 
   return (
     <div className="min-h-full" style={{ background: "var(--surface-1)" }}>
@@ -186,7 +194,7 @@ export function DesignersView({ onNavigate }: DesignersViewProps) {
         {state === "ready" && designers.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {designers.map((d) => (
-              <DesignerCard key={d.id} designer={d} />
+              <DesignerCard key={d.id} designer={d} onRun={setSelected} />
             ))}
           </div>
         )}

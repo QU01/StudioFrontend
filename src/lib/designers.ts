@@ -40,6 +40,78 @@ export interface DesignerSchema {
   spec_schema_version: string;
 }
 
+// ── Spec de una entrada del Diseñador (del plan 01; genera el RunForm, D-39) ──
+// spec.entradas: [{nombre, tipo: "csv"|"float"|"int"|"str", unidad?, requerido, min?, max?}]
+
+export interface SpecEntrada {
+  nombre: string;
+  tipo: "csv" | "float" | "int" | "str";
+  unidad?: string;
+  requerido?: boolean;
+  min?: number;
+  max?: number;
+  [k: string]: unknown;
+}
+
+export interface DesignerSpec {
+  entradas?: SpecEntrada[];
+  [k: string]: unknown;
+}
+
+/** Detalle de una versión del registry (FastAPI GET /{name}/{version}). */
+export interface DesignerVersionDetail {
+  manifest: Record<string, unknown>;
+  spec: DesignerSpec;
+  sha256: string;
+}
+
+// ── Resultado de una corrida headless (POST /{name}/{version}/run) ────────────
+
+export interface RunInputMeta {
+  nombre: string;
+  tipo: string;
+  sha256: string;
+}
+
+export interface RunResult {
+  results: Record<string, unknown>;
+  fingerprint: string;
+  seed: number;
+  duration_s: number;
+  determinism: string; // "cpu-bit-exacta" | "gpu-no-bit-exacta"
+  report_file: string;
+  inputs: RunInputMeta[];
+  designer: { name: string; version: string; sha256: string };
+}
+
+export type RunOutcome =
+  | { ok: true; data: RunResult }
+  | { validationErrors: ValidationError[] }
+  | { error: string };
+
+// ── Fila del historial (espejo del ExecutionRunSerializer del plan 02) ────────
+// ExecutionRun: {id, user, pipeline, project, designer_version, status, results, started_at, finished_at}
+// Los campos de reproducibilidad viven DENTRO de `results` (D-43).
+
+export interface ExecutionRun {
+  id: number;
+  designer_version: number | null;
+  status: "pending" | "running" | "success" | "error";
+  results: {
+    fingerprint?: string;
+    seed?: number;
+    duration_s?: number;
+    determinism?: string;
+    report_file?: string;
+    version?: string;
+    error?: string;
+    metrics?: Record<string, unknown>;
+    [k: string]: unknown;
+  };
+  started_at: string | null;
+  finished_at: string | null;
+}
+
 // ── Resultado discriminado de publishDesigner (422 / 409 / ok) ────────────────
 
 export interface ValidationError {
@@ -197,5 +269,181 @@ export async function mirrorIndexAfterPublish(result: PublishSuccess): Promise<v
     });
   } catch {
     // best-effort: el disco es la verdad (D-30).
+  }
+}
+
+// ── Ejecución headless (FastAPI — D-42/D-44) ──────────────────────────────────
+
+/**
+ * Obtiene manifest + spec + sha256 de una versión (FastAPI GET /{name}/{version}).
+ * El RunForm se genera de `spec.entradas` (D-39: el esquema es del backend).
+ */
+export async function getDesignerVersion(
+  name: string,
+  version: string,
+): Promise<DesignerVersionDetail | null> {
+  if (!getAccessToken()) return null;
+  try {
+    const res = await fetchWithAuth(
+      `${API_BASE}/api/designers/${encodeURIComponent(name)}/${encodeURIComponent(version)}`,
+    );
+    if (!res.ok) return null;
+    return (await res.json()) as DesignerVersionDetail;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ejecuta un Diseñador guardado con nuevas entradas (RQ-1.4-1, D-42, headless).
+ *
+ * Multipart: campo "payload" JSON `{inputs, seed}` + un File por cada entrada CSV
+ * (mapeado por nombre de entrada). NO fijamos Content-Type: `fetchWithAuth` ya
+ * detecta FramData y deja que el browser ponga el boundary (verificado en auth.ts).
+ *
+ * Unión discriminada: éxito → {ok,data}; 422 spec/entradas → {validationErrors};
+ * otro fallo → {error} (mensaje accionable para el panel de error del run).
+ */
+export async function runDesigner(
+  name: string,
+  version: string,
+  inputs: Record<string, unknown>,
+  seed: number,
+  files: Record<string, File>,
+): Promise<RunOutcome> {
+  const form = new FormData();
+  form.append("payload", JSON.stringify({ inputs, seed }));
+  for (const [nombre, file] of Object.entries(files)) {
+    if (file) form.append(nombre, file, file.name);
+  }
+
+  let res: Response;
+  try {
+    res = await fetchWithAuth(
+      `${API_BASE}/api/designers/${encodeURIComponent(name)}/${encodeURIComponent(version)}/run`,
+      { method: "POST", body: form },
+    );
+  } catch {
+    return { error: "No se pudo contactar el backend. Verifica que esté activo." };
+  }
+
+  if (res.status === 422) {
+    const body = await res.json().catch(() => ({}));
+    const errors = (body?.detail?.errors ?? []) as ValidationError[];
+    if (Array.isArray(errors) && errors.length > 0) {
+      return { validationErrors: errors };
+    }
+    const detail = typeof body?.detail === "string" ? body.detail : "Entradas inválidas.";
+    return { error: detail };
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const detail =
+      typeof body?.detail === "string" ? body.detail : "La corrida falló en el backend.";
+    return { error: detail };
+  }
+
+  const data = (await res.json()) as RunResult;
+  return { ok: true, data };
+}
+
+/** URL absoluta del reporte de una corrida (GET /api/designers/reports/{filename}). */
+export function reportUrl(reportFile: string): string {
+  return `${API_BASE}/api/designers/reports/${encodeURIComponent(reportFile)}`;
+}
+
+// ── Historial de runs (Django ExecutionRun — D-43) ────────────────────────────
+
+/**
+ * Persiste una fila de historial en el índice Django (D-43). Best-effort: si el
+ * POST falla, el reporte + fingerprint del backend siguen siendo la verdad en
+ * disco (T-01-21), así que no lanza.
+ */
+export async function recordRun(
+  designerVersionId: number,
+  runResult: RunResult,
+): Promise<void> {
+  if (!getAccessToken()) return;
+  const now = new Date().toISOString();
+  const startedAt = new Date(Date.now() - runResult.duration_s * 1000).toISOString();
+  try {
+    await fetchWithAuth(`${DJANGO_API_BASE}/runs/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        designer_version: designerVersionId,
+        status: "success",
+        results: {
+          fingerprint: runResult.fingerprint,
+          seed: runResult.seed,
+          duration_s: runResult.duration_s,
+          determinism: runResult.determinism,
+          report_file: runResult.report_file,
+          version: runResult.designer.version,
+          metrics: runResult.results,
+        },
+        started_at: startedAt,
+        finished_at: now,
+      }),
+    });
+  } catch {
+    // best-effort (T-01-21): la verdad vive en el reporte + fingerprint del backend.
+  }
+}
+
+/**
+ * Persiste una corrida FALLIDA en el historial (D-43). Best-effort, no lanza.
+ */
+export async function recordFailedRun(
+  designerVersionId: number,
+  version: string,
+  reason: string,
+): Promise<void> {
+  if (!getAccessToken()) return;
+  const now = new Date().toISOString();
+  try {
+    await fetchWithAuth(`${DJANGO_API_BASE}/runs/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        designer_version: designerVersionId,
+        status: "error",
+        results: { version, error: reason },
+        started_at: now,
+        finished_at: now,
+      }),
+    });
+  } catch {
+    // best-effort.
+  }
+}
+
+/**
+ * Lista el historial de corridas de un Diseñador filtrando por sus versiones.
+ *
+ * `ExecutionRunViewSet` no expone filtro por query param, así que traemos las
+ * runs del usuario (ya aisladas por UserDataMixin, T-01-20) y filtramos
+ * client-side por `designer_version ∈ designerVersionIds`. Orden descendente
+ * por `finished_at`/`started_at`.
+ */
+export async function listRuns(designerVersionIds: number[]): Promise<ExecutionRun[]> {
+  if (!getAccessToken()) return [];
+  if (designerVersionIds.length === 0) return [];
+  const idSet = new Set(designerVersionIds);
+  try {
+    const res = await fetchWithAuth(`${DJANGO_API_BASE}/runs/`);
+    if (!res.ok) return [];
+    const list = await res.json();
+    if (!Array.isArray(list)) return [];
+    return (list as ExecutionRun[])
+      .filter((r) => r.designer_version != null && idSet.has(r.designer_version))
+      .sort((a, b) => {
+        const ta = new Date(a.finished_at ?? a.started_at ?? 0).getTime();
+        const tb = new Date(b.finished_at ?? b.started_at ?? 0).getTime();
+        return tb - ta;
+      });
+  } catch {
+    return [];
   }
 }

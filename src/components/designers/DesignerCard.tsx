@@ -16,6 +16,7 @@ import {
 
 interface DesignerCardProps {
   designer: Designer;
+  onRun?: (designer: Designer) => void;
 }
 
 function latestVersion(d: Designer): string {
@@ -38,7 +39,7 @@ function formatDate(iso: string | undefined): string {
   }
 }
 
-export function DesignerCard({ designer }: DesignerCardProps) {
+export function DesignerCard({ designer, onRun }: DesignerCardProps) {
   const [hover, setHover] = useState(false);
   const versionCount = designer.versions?.length ?? 0;
   const chip = `${designer.name}@${latestVersion(designer)}`;
@@ -138,12 +139,11 @@ export function DesignerCard({ designer }: DesignerCardProps) {
       {/* Divisor */}
       <div className="mx-6 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
 
-      {/* Fila de acciones */}
+      {/* Fila de acciones — "Ejecutar" abre el detalle del Diseñador (plan 05). */}
       <div className="p-6 pt-4">
         <button
-          disabled
-          title="Disponible en un milestone próximo — ejecución de Diseñadores"
-          className="w-full py-2 rounded-lg text-[13px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={() => onRun?.(designer)}
+          className="w-full py-2 rounded-lg text-[13px] font-semibold transition-all"
           style={{
             background: "var(--electric)",
             color: "#0A0E14",

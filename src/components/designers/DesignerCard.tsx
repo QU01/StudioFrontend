@@ -134,15 +134,15 @@ export function DesignerCard({ designer, onRun, onChanged }: DesignerCardProps) 
               <MoreVertical size={16} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => void handleExport()}>
+              {/* Base UI Menu.Item usa onClick — onSelect (API Radix) nunca dispara. */}
+              <DropdownMenuItem onClick={() => void handleExport()}>
                 Exportar .qsd
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
-                // Diferir al siguiente tick: Radix devuelve el foco al trigger al
-                // cerrar el menú y cerraría el Dialog en el mismo ciclo (race
-                // menú→diálogo); con el defer el diálogo abre ya cerrado el menú.
-                onSelect={() => {
+                // Diferir al siguiente tick: el menú devuelve el foco al trigger al
+                // cerrarse y cerraría el Dialog en el mismo ciclo (race menú→diálogo).
+                onClick={() => {
                   setTimeout(() => setConfirmDelete(true), 0);
                 }}
               >

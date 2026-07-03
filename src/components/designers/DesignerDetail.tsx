@@ -190,17 +190,7 @@ export function DesignerDetail({ designer, onBack }: DesignerDetailProps) {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="inline-flex items-center gap-2">
-                            <button
-                              onClick={() => setRunFor(v)}
-                              className="px-3 py-1.5 rounded-md text-[13px] font-semibold transition-all"
-                              style={{
-                                background: "var(--electric)",
-                                color: "#0A0E14",
-                                boxShadow: "var(--glow-electric)",
-                              }}
-                            >
-                              Ejecutar
-                            </button>
+                            <RunRowButton onClick={() => setRunFor(v)} />
                             <button
                               onClick={() => void handleExport(v.version)}
                               className="px-3 py-1.5 rounded-md text-[13px] font-medium transition-all"
@@ -239,5 +229,26 @@ export function DesignerDetail({ designer, onBack }: DesignerDetailProps) {
         />
       ) : null}
     </div>
+  );
+}
+
+// Acción "Ejecutar" a densidad de fila: outline que se rellena eléctrico en hover,
+// sin glow (disciplina 60/30/10 — el glow es tratamiento de héroe, no de tabla).
+function RunRowButton({ onClick }: { onClick: () => void }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      className="px-3 py-1.5 rounded-md text-[13px] font-semibold transition-all"
+      style={{
+        background: hover ? "var(--electric)" : "transparent",
+        color: hover ? "#0A0E14" : "var(--electric)",
+        border: "1px solid rgba(58,160,255,0.45)",
+      }}
+    >
+      Ejecutar
+    </button>
   );
 }

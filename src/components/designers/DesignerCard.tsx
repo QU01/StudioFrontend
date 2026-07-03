@@ -51,6 +51,7 @@ function formatDate(iso: string | undefined): string {
 
 export function DesignerCard({ designer, onRun, onChanged }: DesignerCardProps) {
   const [hover, setHover] = useState(false);
+  const [runHover, setRunHover] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const versionCount = designer.versions?.length ?? 0;
@@ -188,15 +189,19 @@ export function DesignerCard({ designer, onRun, onChanged }: DesignerCardProps) 
       {/* Divisor */}
       <div className="mx-6 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
 
-      {/* Fila de acciones — "Ejecutar" abre el detalle del Diseñador (plan 05). */}
+      {/* Fila de acciones — "Ejecutar" abre el detalle del Diseñador (plan 05).
+          Acción de lista (N tarjetas): outline que se rellena eléctrico en hover
+          (disciplina 60/30/10, sin glow a densidad de lista). */}
       <div className="p-6 pt-4">
         <button
           onClick={() => onRun?.(designer)}
+          onMouseEnter={() => setRunHover(true)}
+          onMouseLeave={() => setRunHover(false)}
           className="w-full py-2 rounded-lg text-[13px] font-semibold transition-all"
           style={{
-            background: "var(--electric)",
-            color: "#0A0E14",
-            boxShadow: "var(--glow-electric)",
+            background: runHover ? "var(--electric)" : "transparent",
+            color: runHover ? "#0A0E14" : "var(--electric)",
+            border: "1px solid rgba(58,160,255,0.45)",
           }}
         >
           Ejecutar

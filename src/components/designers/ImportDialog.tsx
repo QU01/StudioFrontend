@@ -262,23 +262,23 @@ export function ImportDialog({
                 publicadas nunca se sobrescriben.
               </DialogDescription>
             </DialogHeader>
+            {/* Guía en vez de una primaria inerte: renombrar-y-reimportar es el
+                camino documentado. Se muestra como pista, no como slab eléctrico. */}
+            <p
+              className="mt-1 text-[12px]"
+              style={{ fontFamily: fontMono, color: "var(--ink-dim)", lineHeight: 1.5 }}
+            >
+              Para conservar ambos, renombra el archivo .qsd (nombre o versión
+              distinta) y vuelve a importarlo.
+            </p>
             <div className="flex items-center justify-end gap-2 mt-2">
               <button
                 type="button"
-                disabled
-                title="Renombra el archivo .qsd y reintenta"
-                className="px-4 py-2 rounded-lg text-[13px] font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                style={btnPrimary}
-              >
-                Importar con otro nombre/versión
-              </button>
-              <button
-                type="button"
                 onClick={close}
-                className="px-4 py-2 rounded-lg text-[13px] font-medium transition-all"
+                className="px-4 py-2 rounded-lg text-[13px] font-semibold transition-all"
                 style={btnOutline}
               >
-                Cancelar
+                Entendido
               </button>
             </div>
           </>

@@ -179,7 +179,7 @@ export function RunHistoryTable({ versionIds, refreshNonce = 0 }: RunHistoryTabl
                       href={reportUrl(r.report_file)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[13px]"
+                      className="text-[13px] transition-colors hover:underline"
                       style={{ color: "var(--electric)" }}
                     >
                       Ver reporte

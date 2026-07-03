@@ -33,6 +33,7 @@ import { ConfigPanel } from "./ConfigPanel";
 import { DeleteableEdge } from "./DeleteableEdge";
 import { DataPreviewModal } from "./DataPreviewModal";
 import { SaveModal } from "@/components/ui/SaveModal";
+import { PublishModal } from "@/components/designers/PublishModal";
 import { useDemoStore } from "@/store/demoStore";
 import { DemoOverlay } from "@/components/demo/DemoOverlay";
 
@@ -51,7 +52,7 @@ function nextId() {
 
 const defaultEdgeOptions = {
   type: "deleteable",
-  style: { stroke: "#007bff", strokeWidth: 1.5 },
+  style: { stroke: "var(--electric)", strokeWidth: 1.5 },
   animated: false,
 };
 
@@ -63,6 +64,7 @@ export function PipelineView({ activeView }: { activeView?: string }) {
   const [datasetInfo, setDatasetInfo] = useState<DatasetInfo | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isAutoMLOpen, setIsAutoMLOpen] = useState(false);
   // When true, the modal is for "Save As" (forces creating a new pipeline even if one is loaded)
   const [saveAsMode, setSaveAsMode] = useState(false);
@@ -730,12 +732,14 @@ export function PipelineView({ activeView }: { activeView?: string }) {
             onSave={handleQuickSave}
             onSaveAs={handleSaveAs}
             onAutoML={() => setIsAutoMLOpen(true)}
+            onPublishDesigner={() => setIsPublishModalOpen(true)}
             pipelineName={currentPipelineName}
             isRunning={isRunning}
           />
           <button
             onClick={toggleDemo}
-            className="absolute top-2 right-2 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#1a2535] hover:bg-[#1e3050] text-[#3AA0FF] border border-[#3AA0FF]/30 transition-colors"
+            className="absolute top-2 right-2 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+            style={{ background: "var(--surface-2)", color: "var(--electric)", border: "1px solid rgba(58,160,255,0.25)" }}
             title="Demo Mode (Ctrl+Shift+D)"
           >
             ◉ Demo
@@ -758,25 +762,25 @@ export function PipelineView({ activeView }: { activeView?: string }) {
             edgeTypes={edgeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
             deleteKeyCode={["Backspace", "Delete"]}
-            connectionLineStyle={{ stroke: "#00f0ff", strokeWidth: 1.5, strokeDasharray: "5 5" }}
+            connectionLineStyle={{ stroke: "var(--cyan-glow)", strokeWidth: 1.5, strokeDasharray: "5 5" }}
             onInit={(instance) => { rfInstanceRef.current = instance as unknown as ReactFlowInstance; }}
-            style={{ background: "#181d23" }}
+            style={{ background: "var(--surface-1)" }}
             onMove={(_, viewport) => {
               viewportRef.current = viewport;
             }}
             proOptions={{ hideAttribution: true }}
           >
-            <Background variant={BackgroundVariant.Dots} color="#2a3240" gap={20} size={1.5} />
+            <Background variant={BackgroundVariant.Dots} color="#222A35" gap={20} size={1.5} />
             <Controls style={{ background: "transparent", border: "none", boxShadow: "none" }} />
             {nodes.length === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none select-none">
-                <Workflow size={48} className="text-white/10 mb-3" />
-                <p className="text-white/30 text-sm font-medium">Drag nodes from the toolbar to start building</p>
-                <p className="text-white/20 text-xs mt-1">or ask QUO to build a pipeline for you</p>
+                <Workflow size={48} className="mb-3" style={{ color: "var(--surface-3)" }} />
+                <p className="text-sm font-medium" style={{ color: "var(--ink-dim)" }}>Drag nodes from the toolbar to start building</p>
+                <p className="text-xs mt-1" style={{ color: "var(--ink-dim)", opacity: 0.6 }}>or ask QUO to build a pipeline for you</p>
               </div>
             )}
             <MiniMap
-              style={{ background: "#1a2030", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}
+              style={{ background: "var(--surface-0)", border: "1px solid var(--surface-3)", borderRadius: 8 }}
               maskColor="rgba(0,0,0,0.6)"
               nodeColor={(n) => {
                 const data = n.data as PipelineNodeData;
@@ -788,9 +792,15 @@ export function PipelineView({ activeView }: { activeView?: string }) {
 
         {/* Config / Preview Panel — hidden in demo mode */}
         {!isDemoMode && (
-          <div className="w-[300px] shrink-0 bg-[#222a35] border-l border-white/5 flex flex-col">
-            <div className="px-4 py-3 border-b border-white/5 shrink-0">
-              <div className="text-[13px] font-semibold text-white/80">Node Inspector</div>
+          <div
+            className="w-[300px] shrink-0 flex flex-col"
+            style={{ background: "var(--surface-2)", borderLeft: "1px solid var(--surface-3)" }}
+          >
+            <div className="px-4 py-3 shrink-0" style={{ borderBottom: "1px solid var(--surface-3)" }}>
+              <div
+                className="text-[11px] font-bold uppercase tracking-widest"
+                style={{ fontFamily: "var(--quasar-font-mono)", color: "var(--ink-dim)" }}
+              >Node Inspector</div>
             </div>
             <div className="flex-1 min-h-0">
               <ConfigPanel
@@ -825,6 +835,12 @@ export function PipelineView({ activeView }: { activeView?: string }) {
         title={saveAsMode ? "Save Pipeline As…" : "Save Pipeline"}
         descriptionLabel="Pipeline Description"
         initialName={saveAsMode ? `${currentPipelineName || "Pipeline"} (copy)` : currentPipelineName}
+      />
+
+      {/* "Guardar como Diseñador" (D-32): publica el pipeline vivo como Diseñador. */}
+      <PublishModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
       />
 
       <DemoOverlay />

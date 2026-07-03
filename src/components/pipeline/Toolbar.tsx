@@ -2,7 +2,7 @@
 
 import {
   Database, Filter, Columns2, Eraser, BarChart2, Scissors, Brain, LineChart, Group, Binary, Hash, Network,
-  Trash2, Play, Save, Code2, RefreshCw, Square, Copy, FileText, Zap,
+  Trash2, Play, Save, Code2, RefreshCw, Square, Copy, FileText, Zap, Package,
 } from "lucide-react";
 import { NODE_KIND_ORDER, NODE_META, type NodeKind } from "./nodeTypes";
 
@@ -19,19 +19,33 @@ interface ToolbarProps {
   onSave?: () => void;
   onSaveAs?: () => void;
   onAutoML?: () => void;
+  onPublishDesigner?: () => void;
   pipelineName?: string;
   isRunning: boolean;
 }
 
-export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveAs, onAutoML, pipelineName, isRunning }: ToolbarProps) {
+export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveAs, onAutoML, onPublishDesigner, pipelineName, isRunning }: ToolbarProps) {
   return (
-    <div className="flex flex-col bg-[#1a2030] border-b border-white/10 shrink-0">
+    <div
+      className="flex flex-col shrink-0"
+      style={{ background: "var(--surface-0)", borderBottom: "1px solid var(--surface-3)" }}
+    >
     {/* Title bar with current pipeline name */}
-    <div className="flex items-center gap-2 px-4 py-1.5 border-b border-white/5">
-      <FileText size={12} className="text-white/30" />
-      <span className="text-[11px] uppercase tracking-widest text-white/30 font-bold">Pipeline:</span>
-      <span className="text-[12px] text-white/80 font-medium truncate" title={pipelineName || "Untitled"}>
-        {pipelineName || <span className="text-white/25 italic font-normal">Untitled (unsaved)</span>}
+    <div
+      className="flex items-center gap-2 px-4 py-1.5"
+      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+    >
+      <FileText size={12} style={{ color: "var(--ink-dim)" }} />
+      <span
+        className="text-[10px] uppercase tracking-widest font-bold"
+        style={{ fontFamily: "var(--quasar-font-mono)", color: "var(--ink-dim)" }}
+      >Pipeline:</span>
+      <span
+        className="text-[12px] font-medium truncate"
+        style={{ color: "var(--ink-primary)" }}
+        title={pipelineName || "Untitled"}
+      >
+        {pipelineName || <span style={{ color: "var(--ink-dim)", fontStyle: "italic", fontWeight: 400 }}>Untitled (unsaved)</span>}
       </span>
     </div>
     <div className="flex items-center gap-2 px-4 py-2 flex-wrap">
@@ -45,7 +59,10 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
         }
         return Object.entries(groups).map(([category, kinds]) => (
           <div key={category} className="flex items-center gap-1 flex-wrap">
-            <span className="text-[9px] text-white/20 uppercase tracking-widest font-bold px-1 select-none">
+            <span
+              className="text-[9px] uppercase tracking-widest font-bold px-1 select-none"
+              style={{ fontFamily: "var(--quasar-font-mono)", color: "var(--ink-dim)" }}
+            >
               {category}
             </span>
             {kinds.map((kind) => {
@@ -69,7 +86,7 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
                 </button>
               );
             })}
-            <span className="text-white/10 mx-1 select-none">│</span>
+            <span className="mx-1 select-none" style={{ color: "var(--surface-3)" }}>│</span>
           </div>
         ));
       })()}
@@ -80,7 +97,7 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
             onClick={onAutoML}
             disabled={isRunning}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{ background: "#7c3aed22", border: "1px solid #7c3aed66", color: "#a78bfa" }}
+            style={{ background: "rgba(226,62,192,0.10)", border: "1px solid rgba(226,62,192,0.35)", color: "var(--magenta)" }}
             title="Auto-find the best model"
           >
             <Zap size={13} />
@@ -88,11 +105,24 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
           </button>
         )}
 
+        {onPublishDesigner && (
+          <button
+            onClick={onPublishDesigner}
+            disabled={isRunning}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ background: "rgba(58,160,255,0.10)", border: "1px solid rgba(58,160,255,0.35)", color: "var(--electric)" }}
+            title="Publicar el pipeline vivo como un Diseñador"
+          >
+            <Package size={13} />
+            Guardar como Diseñador
+          </button>
+        )}
+
         {isRunning && onStop ? (
           <button
             onClick={onStop}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[12px] font-semibold text-white transition-all hover:scale-105 active:scale-95"
-            style={{ background: "#c0392b", boxShadow: "0 0 12px rgba(192,57,43,0.5)" }}
+            style={{ background: "var(--error)", boxShadow: "0 0 12px rgba(239,68,68,0.5)" }}
             title="Detener ejecución"
           >
             <Square size={13} />
@@ -104,8 +134,9 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
             disabled={isRunning}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[12px] font-semibold text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
-              background: "#007bff",
-              boxShadow: "0 0 12px rgba(0,123,255,0.4)",
+              background: "var(--electric)",
+              boxShadow: "var(--glow-electric)",
+              color: "#0A0E14",
             }}
           >
             <Play size={13} />
@@ -117,7 +148,10 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
           <button
             onClick={onSave}
             disabled={isRunning}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-white/40 hover:text-[#00f0ff] hover:bg-[#00f0ff]/10 transition-all border border-white/10 disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all disabled:opacity-40"
+            style={{ color: "var(--ink-dim)", border: "1px solid var(--surface-3)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--electric)"; e.currentTarget.style.background = "rgba(58,160,255,0.08)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--ink-dim)"; e.currentTarget.style.background = "transparent"; }}
             title={pipelineName ? `Update "${pipelineName}"` : "Save Pipeline to server"}
           >
             <Save size={13} />
@@ -129,7 +163,10 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
           <button
             onClick={onSaveAs}
             disabled={isRunning}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-white/40 hover:text-[#00f0ff] hover:bg-[#00f0ff]/10 transition-all border border-white/10 disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all disabled:opacity-40"
+            style={{ color: "var(--ink-dim)", border: "1px solid var(--surface-3)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--electric)"; e.currentTarget.style.background = "rgba(58,160,255,0.08)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--ink-dim)"; e.currentTarget.style.background = "transparent"; }}
             title="Save as a new pipeline"
           >
             <Copy size={13} />
@@ -140,7 +177,10 @@ export function Toolbar({ onAddNode, onClear, onExecute, onStop, onSave, onSaveA
         <button
           onClick={onClear}
           disabled={isRunning}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-all border border-white/10 disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all disabled:opacity-40"
+          style={{ color: "var(--ink-dim)", border: "1px solid var(--surface-3)" }}
+          onMouseEnter={e => { e.currentTarget.style.color = "var(--error)"; e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "var(--ink-dim)"; e.currentTarget.style.background = "transparent"; }}
           title="Clear canvas"
         >
           <Trash2 size={13} />

@@ -139,7 +139,12 @@ export function DesignerCard({ designer, onRun, onChanged }: DesignerCardProps) 
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
-                onSelect={() => setConfirmDelete(true)}
+                // Diferir al siguiente tick: Radix devuelve el foco al trigger al
+                // cerrar el menú y cerraría el Dialog en el mismo ciclo (race
+                // menú→diálogo); con el defer el diálogo abre ya cerrado el menú.
+                onSelect={() => {
+                  setTimeout(() => setConfirmDelete(true), 0);
+                }}
               >
                 Eliminar
               </DropdownMenuItem>

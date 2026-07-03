@@ -5,7 +5,7 @@
 // colores SOLO vía variables CSS (--surface-*, --electric, --ink-*); acento rosa prohibido.
 
 import { useState } from "react";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Boxes } from "lucide-react";
 import { toast } from "sonner";
 import { exportDesigner, deleteDesigner, type Designer } from "@/lib/designers";
 import {
@@ -87,19 +87,34 @@ export function DesignerCard({ designer, onRun, onChanged }: DesignerCardProps) 
 
   return (
     <div
-      className="flex flex-col rounded-2xl overflow-hidden transition-all duration-300"
+      className="flex flex-col rounded-xl overflow-hidden transition-all duration-300"
       style={{
         background: "var(--surface-2)",
         border: `1px solid ${hover ? "rgba(58,160,255,0.35)" : "rgba(255,255,255,0.06)"}`,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+        boxShadow: hover
+          ? "var(--shadow-elevated)"
+          : "0 1px 3px rgba(0,0,0,0.4)",
+        transform: hover ? "translateY(-2px)" : "translateY(0)",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
       <div className="flex flex-col flex-1 p-6 gap-3">
-        {/* Nombre + chip nombre@versión */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        {/* Tile de artefacto + nombre + chip nombre@versión (mismo trato que las
+            stat-tiles del Dashboard: surface-3 con acento eléctrico tenue). */}
+        <div className="flex items-start gap-3">
+          <div
+            className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+            style={{
+              background: "color-mix(in srgb, var(--electric) 14%, var(--surface-3))",
+              border: "1px solid rgba(58,160,255,0.25)",
+              color: "var(--electric)",
+            }}
+            aria-hidden
+          >
+            <Boxes size={22} />
+          </div>
+          <div className="min-w-0 flex-1">
             <h2
               className="truncate"
               style={{
@@ -171,18 +186,48 @@ export function DesignerCard({ designer, onRun, onChanged }: DesignerCardProps) 
           </p>
         ) : null}
 
-        {/* Metadatos mono */}
-        <div
-          className="flex items-center gap-3 mt-auto"
-          style={{
-            fontFamily: "var(--quasar-font-mono)",
-            fontSize: "12px",
-            color: "var(--ink-muted)",
-          }}
-        >
-          <span>{versionCount} {versionCount === 1 ? "versión" : "versiones"}</span>
-          <span>·</span>
-          <span>{formatDate(designer.created_at)}</span>
+        {/* Métrica destacada: nº de versiones como numeral mono grande + label. */}
+        <div className="flex items-end justify-between gap-3 mt-auto pt-1">
+          <div className="flex flex-col">
+            <span
+              style={{
+                fontFamily: "var(--quasar-font-mono)",
+                fontSize: "28px",
+                fontWeight: 700,
+                lineHeight: 1,
+                color: "var(--ink-primary)",
+              }}
+            >
+              {versionCount}
+            </span>
+            <span
+              className="mt-1"
+              style={{
+                fontFamily: "var(--quasar-font-mono)",
+                fontSize: "11px",
+                textTransform: "uppercase",
+                letterSpacing: "0.15em",
+                color: "var(--ink-dim)",
+              }}
+            >
+              {versionCount === 1 ? "versión" : "versiones"}
+            </span>
+          </div>
+
+          {/* Metadatos: publicación + último run (UI-SPEC §Screens 1). No hay
+              datos de runs en el objeto Designer → "Sin ejecuciones" honesto,
+              sin llamadas de red nuevas. */}
+          <div
+            className="flex flex-col items-end gap-0.5 text-right"
+            style={{ fontFamily: "var(--quasar-font-mono)", fontSize: "12px" }}
+          >
+            <span style={{ color: "var(--ink-muted)" }}>
+              {formatDate(designer.created_at)}
+            </span>
+            <span style={{ color: "var(--ink-dim)" }}>
+              último run · Sin ejecuciones
+            </span>
+          </div>
         </div>
       </div>
 

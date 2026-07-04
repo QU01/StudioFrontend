@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
-import { Krub, Montserrat } from "next/font/google";
+import { Orbitron, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import { DemoMode } from "@/components/demo/DemoMode";
 
-const krub = Krub({
-  weight: ["300", "400", "500", "600", "700"],
+const orbitron = Orbitron({
+  weight: ["500", "600", "700", "800"],
   subsets: ["latin"],
-  variable: "--font-krub",
+  variable: "--font-orbitron",
 });
 
-const montserrat = Montserrat({
+const inter = Inter({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["latin"],
-  variable: "--font-montserrat",
+  variable: "--font-inter",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
 });
 
 export const metadata: Metadata = {
@@ -30,9 +36,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${krub.variable} ${montserrat.variable} dark antialiased`}
+      className={`${orbitron.variable} ${inter.variable} ${jetbrainsMono.variable} dark antialiased`}
     >
-      <body className={`h-screen overflow-hidden ${krub.className} bg-[#181d23] text-[#a5a8ad]`}>
+      <body className={`h-screen overflow-hidden ${inter.className} bg-[#181D23] text-[#F5F7FA]`}>
         <AuthProvider>
           <DemoMode>
             {children}

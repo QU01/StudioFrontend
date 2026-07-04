@@ -13,9 +13,9 @@ import { toast } from "sonner";
 type Phase = "upload" | "loading" | "explorer" | "error";
 
 const DEMO_COLORS: Record<string, { accent: string; bg: string }> = {
-  iris:    { accent: "#17C2D7", bg: "rgba(23,194,215,0.08)" },
-  wine:    { accent: "#9367B4", bg: "rgba(147,103,180,0.08)" },
-  titanic: { accent: "#007bff", bg: "rgba(0,123,255,0.08)" },
+  iris:    { accent: "var(--cyan)",     bg: "rgba(92,200,232,0.08)" },
+  wine:    { accent: "var(--magenta)",  bg: "rgba(226,62,192,0.08)" },
+  titanic: { accent: "var(--electric)", bg: "rgba(58,160,255,0.08)" },
 };
 
 interface SavedDataset {
@@ -217,8 +217,11 @@ export function DataView() {
         {savedDatasets.length > 0 && (
           <div className="w-full max-w-2xl">
             <div className="flex items-center gap-2 mb-3">
-              <Database size={14} className="text-white/50" />
-              <span className="text-[11px] font-bold uppercase tracking-widest text-white/40">
+              <Database size={14} style={{ color: "var(--ink-dim)" }} />
+              <span
+                className="text-[11px] font-bold uppercase tracking-widest"
+                style={{ fontFamily: "var(--quasar-font-mono)", color: "var(--ink-dim)" }}
+              >
                 My Saved Datasets
               </span>
             </div>
@@ -234,35 +237,39 @@ export function DataView() {
                       disabled={!canReload || loadingSavedId !== null}
                       className="w-full text-left rounded-xl p-4 border transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
-                        background: "rgba(255,255,255,0.03)",
-                        borderColor: "rgba(255,255,255,0.1)",
+                        background: "var(--surface-2)",
+                        borderColor: "var(--surface-3)",
                       }}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[13px] font-semibold text-white/80 truncate max-w-[110px]">
+                        <span
+                          className="text-[13px] font-semibold truncate max-w-[110px]"
+                          style={{ color: "var(--ink-primary)" }}
+                        >
                           {d.name}
                         </span>
                         {isLoading ? (
-                          <Loader2 size={13} className="animate-spin text-[#00f0ff] shrink-0" />
+                          <Loader2 size={13} className="animate-spin shrink-0" style={{ color: "var(--electric)" }} />
                         ) : (
                           <span
                             className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border shrink-0"
                             style={{
-                              color: canReload ? "#00f0ff" : "rgba(255,255,255,0.3)",
-                              borderColor: canReload ? "rgba(0,240,255,0.3)" : "rgba(255,255,255,0.1)",
+                              fontFamily: "var(--quasar-font-mono)",
+                              color: canReload ? "var(--electric)" : "var(--ink-dim)",
+                              borderColor: canReload ? "rgba(58,160,255,0.3)" : "var(--surface-3)",
                             }}
                           >
                             {canReload ? "load" : "no data"}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-white/40 leading-snug mb-3">
+                      <p className="text-[11px] leading-snug mb-3" style={{ color: "var(--ink-muted)" }}>
                         {d.description ?? d.file_path}
                       </p>
-                      <div className="flex gap-3 text-[10px] text-white/30">
+                      <div className="flex gap-3 text-[10px]" style={{ color: "var(--ink-dim)", fontFamily: "var(--quasar-font-mono)" }}>
                         {d.rows > 0 && <span>{d.rows.toLocaleString()} rows</span>}
                         {d.columns > 0 && <span>{d.columns} cols</span>}
-                        <span className="text-white/20">
+                        <span style={{ opacity: 0.6 }}>
                           {new Date(d.created_at).toLocaleDateString()}
                         </span>
                       </div>
@@ -286,8 +293,11 @@ export function DataView() {
         {demos.length > 0 && (
           <div className="w-full max-w-2xl">
             <div className="flex items-center gap-2 mb-3">
-              <Zap size={14} className="text-[#00f0ff]" />
-              <span className="text-[11px] font-bold uppercase tracking-widest text-white/40">
+              <Zap size={14} style={{ color: "var(--electric)" }} />
+              <span
+                className="text-[11px] font-bold uppercase tracking-widest"
+                style={{ fontFamily: "var(--quasar-font-mono)", color: "var(--ink-dim)" }}
+              >
                 Quick Start — Demo Datasets
               </span>
             </div>
@@ -324,11 +334,11 @@ export function DataView() {
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-white/50 leading-snug mb-3">{d.description}</p>
-                    <div className="flex gap-3 text-[10px] text-white/30">
+                    <p className="text-[11px] leading-snug mb-3" style={{ color: "var(--ink-muted)" }}>{d.description}</p>
+                    <div className="flex gap-3 text-[10px]" style={{ color: "var(--ink-dim)", fontFamily: "var(--quasar-font-mono)" }}>
                       <span>{d.rows} rows</span>
                       <span>{d.columns} cols</span>
-                      <span className="text-white/20">target: <span className="text-white/40">{d.target}</span></span>
+                      <span style={{ opacity: 0.5 }}>target: <span style={{ color: "var(--ink-muted)" }}>{d.target}</span></span>
                     </div>
                   </button>
                 );
@@ -358,9 +368,9 @@ export function DataView() {
   if (phase === "loading") {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-white/50">
-          <Loader2 size={32} className="animate-spin text-[#00f0ff]" />
-          <span className="text-sm">Profiling dataset…</span>
+        <div className="flex flex-col items-center gap-3" style={{ color: "var(--ink-muted)" }}>
+          <Loader2 size={32} className="animate-spin" style={{ color: "var(--electric)" }} />
+          <span className="text-sm" style={{ fontFamily: "var(--quasar-font-mono)" }}>Profiling dataset…</span>
         </div>
       </div>
     );

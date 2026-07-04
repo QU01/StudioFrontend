@@ -3,57 +3,116 @@
 import { useEffect, useState } from "react";
 import {
   Database, GitBranch, Brain, Cpu,
-  TrendingUp, Clock, CheckCircle2, AlertTriangle,
+  TrendingUp, Clock, CheckCircle2,
   ArrowUpRight, MoreHorizontal,
-  Activity, Zap, Server, BarChart2, Folder, Sparkles
+  Activity, Server, BarChart2, Sparkles, Zap,
 } from "lucide-react";
 import { fetchSystemInfo, fetchDashboardStats, type SystemInfo, type DashboardStats } from "@/lib/api";
 
-/* ── Oculux styled Stat Card with original ML content ── */
-function StatCard({ icon: Icon, label, value, sub, bgIcon }: any) {
+/* ── Stat Card ── */
+function StatCard({ icon: Icon, label, value, sub, accentColor }: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  sub?: string;
+  accentColor: string;
+}) {
   return (
-    <div className="bg-[#222a35] rounded-xl p-5 flex items-center border border-white/5 relative overflow-hidden group transition-all hover:-translate-y-1">
-      
-      <div 
-        className="w-16 h-16 rounded-full flex items-center justify-center shrink-0 z-10"
-        style={{ backgroundColor: bgIcon, color: "white" }}
+    <div
+      className="rounded-xl p-5 flex items-center relative overflow-hidden transition-all hover:-translate-y-0.5"
+      style={{
+        background: 'var(--surface-2)',
+        border: '1px solid var(--surface-3)',
+      }}
+    >
+      <div
+        className="w-14 h-14 rounded-lg flex items-center justify-center shrink-0 z-10"
+        style={{ background: `color-mix(in srgb, ${accentColor} 18%, var(--surface-3))`, color: accentColor }}
       >
-        <Icon size={24} />
+        <Icon size={22} />
       </div>
 
-      <div className="ml-5 flex-1 z-10 flex flex-col justify-center">
-        <div className="text-white/60 text-[13px] font-medium mb-0.5">{label}</div>
-        <div className="text-white text-[28px] font-bold tracking-normal leading-none mb-1">{value}</div>
-        {sub && <div className="text-white/40 text-[11px] truncate">{sub}</div>}
+      <div className="ml-4 flex-1 z-10 flex flex-col justify-center min-w-0">
+        <div
+          className="text-[11px] uppercase mb-1"
+          style={{ fontFamily: 'var(--quasar-font-mono)', letterSpacing: '0.15em', color: 'var(--ink-dim)' }}
+        >
+          {label}
+        </div>
+        <div
+          className="text-[26px] font-bold leading-none mb-1"
+          style={{ fontFamily: 'var(--quasar-font-mono)', color: 'var(--ink-primary)' }}
+        >
+          {value}
+        </div>
+        {sub && (
+          <div
+            className="text-[11px] truncate"
+            style={{ fontFamily: 'var(--quasar-font-mono)', color: 'var(--ink-dim)' }}
+          >
+            {sub}
+          </div>
+        )}
       </div>
 
-      <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-5 bg-white pointer-events-none" />
+      {/* Subtle accent glow in corner */}
+      <div
+        className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${accentColor}18, transparent 70%)` }}
+      />
     </div>
   );
 }
 
 /* ── Activity Item ── */
-function ActivityItem({ icon, title, sub, time, statusColor, status }: any) {
+function ActivityItem({ icon, title, sub, time, accentColor, status }: {
+  icon: React.ReactNode;
+  title: string;
+  sub: string;
+  time: string;
+  accentColor: string;
+  status: string;
+}) {
   return (
-    <div className="flex items-center gap-4 px-5 py-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-b-0">
+    <div
+      className="flex items-center gap-4 px-5 py-3 transition-colors"
+      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+    >
       <span
-        className="w-8 h-8 rounded-md flex items-center justify-center text-sm"
-        style={{ backgroundColor: statusColor, color: "white" }}
+        className="w-8 h-8 rounded flex items-center justify-center text-sm flex-shrink-0"
+        style={{ background: `color-mix(in srgb, ${accentColor} 20%, var(--surface-3))`, color: accentColor }}
       >
         {icon}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] text-white/90 font-medium truncate">{title}</p>
-        <p className="text-[11px] text-white/50 truncate">{sub}</p>
+        <p
+          className="text-[13px] font-medium truncate"
+          style={{ fontFamily: 'var(--quasar-font-sans)', color: 'var(--ink-primary)' }}
+        >
+          {title}
+        </p>
+        <p
+          className="text-[11px] truncate"
+          style={{ fontFamily: 'var(--quasar-font-mono)', color: 'var(--ink-muted)' }}
+        >
+          {sub}
+        </p>
       </div>
       <div className="flex flex-col items-end gap-1">
         <span
           className="rounded text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5"
-          style={{ border: `1px solid ${statusColor}`, color: statusColor }}
+          style={{ fontFamily: 'var(--quasar-font-mono)', border: `1px solid ${accentColor}`, color: accentColor }}
         >
           {status}
         </span>
-        <span className="text-[10px] text-white/30">{time}</span>
+        <span
+          className="text-[10px]"
+          style={{ fontFamily: 'var(--quasar-font-mono)', color: 'var(--ink-dim)' }}
+        >
+          {time}
+        </span>
       </div>
     </div>
   );
@@ -62,12 +121,25 @@ function ActivityItem({ icon, title, sub, time, statusColor, status }: any) {
 /* ── Resource Bar ── */
 function ResourceBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="mb-2.5">
+    <div className="mb-3">
       <div className="flex justify-between items-center mb-1">
-        <span className="text-[11px] text-white/50">{label}</span>
-        <span className="text-[11px] font-bold" style={{ color }}>{value}%</span>
+        <span
+          className="text-[11px]"
+          style={{ fontFamily: 'var(--quasar-font-mono)', color: 'var(--ink-muted)' }}
+        >
+          {label}
+        </span>
+        <span
+          className="text-[11px] font-semibold"
+          style={{ fontFamily: 'var(--quasar-font-mono)', color }}
+        >
+          {value}%
+        </span>
       </div>
-      <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+      <div
+        className="w-full h-1 rounded-full overflow-hidden"
+        style={{ background: 'var(--surface-3)' }}
+      >
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${value}%`, backgroundColor: color }}
@@ -78,21 +150,78 @@ function ResourceBar({ label, value, color }: { label: string; value: number; co
 }
 
 /* ── Quick Action ── */
-function QuickAction({ icon: Icon, label, sub, color }: any) {
+function QuickAction({ icon: Icon, label, sub, color }: {
+  icon: React.ElementType;
+  label: string;
+  sub: string;
+  color: string;
+}) {
   return (
-    <button className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-all group text-left">
-      <div 
-        className="w-8 h-8 rounded-md flex items-center justify-center group-hover:scale-110 transition-transform"
-        style={{ backgroundColor: `color-mix(in srgb, ${color} 20%, transparent)`, color: color }}
+    <button
+      className="w-full flex items-center gap-3 p-2.5 rounded-lg transition-all group text-left"
+      style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+    >
+      <div
+        className="w-8 h-8 rounded flex items-center justify-center transition-transform group-hover:scale-110"
+        style={{ background: `color-mix(in srgb, ${color} 18%, var(--surface-3))`, color }}
       >
-        <Icon size={16} />
+        <Icon size={15} />
       </div>
       <div className="flex-1">
-        <p className="text-[13px] text-white/90 font-medium">{label}</p>
-        <p className="text-[11px] text-white/40">{sub}</p>
+        <p
+          className="text-[13px] font-medium"
+          style={{ fontFamily: 'var(--quasar-font-sans)', color: 'var(--ink-primary)' }}
+        >
+          {label}
+        </p>
+        <p
+          className="text-[11px]"
+          style={{ fontFamily: 'var(--quasar-font-mono)', color: 'var(--ink-dim)' }}
+        >
+          {sub}
+        </p>
       </div>
-      <ArrowUpRight size={14} className="text-white/20 group-hover:text-white/60 transition-colors" />
+      <ArrowUpRight
+        size={14}
+        className="transition-colors"
+        style={{ color: 'var(--ink-dim)' }}
+      />
     </button>
+  );
+}
+
+/* ── Section Card wrapper ── */
+function SectionCard({ title, icon: Icon, iconColor, action, children }: {
+  title: string;
+  icon: React.ElementType;
+  iconColor: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ background: 'var(--surface-2)', border: '1px solid var(--surface-3)' }}
+    >
+      <div
+        className="px-5 py-3.5 flex items-center justify-between"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        <div className="flex items-center gap-2">
+          <Icon size={15} style={{ color: iconColor }} />
+          <span
+            className="text-[13px] font-semibold"
+            style={{ fontFamily: 'var(--quasar-font-sans)', color: 'var(--ink-primary)' }}
+          >
+            {title}
+          </span>
+        </div>
+        {action}
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -112,24 +241,18 @@ export function Dashboard() {
   }, []);
 
   const gpuLabel = sysInfo
-    ? sysInfo.gpu_available
-      ? sysInfo.gpu_name ?? "GPU"
-      : "CPU Only"
+    ? sysInfo.gpu_available ? sysInfo.gpu_name ?? "GPU" : "CPU Only"
     : "GPU";
 
   const gpuValue = sysInfo
     ? sysInfo.gpu_available && sysInfo.gpu_utilization_pct != null
       ? `${sysInfo.gpu_utilization_pct}%`
-      : sysInfo.gpu_available
-        ? "Active"
-        : "N/A"
+      : sysInfo.gpu_available ? "Active" : "N/A"
     : "—";
 
   const gpuSub = sysInfo?.gpu_available && sysInfo.gpu_memory_used_mb != null && sysInfo.gpu_memory_total_mb != null
     ? `${(sysInfo.gpu_memory_used_mb / 1024).toFixed(1)} / ${(sysInfo.gpu_memory_total_mb / 1024).toFixed(1)} GB VRAM`
-    : sysInfo?.gpu_available === false
-      ? "No CUDA GPU detected"
-      : "Loading…";
+    : sysInfo?.gpu_available === false ? "No CUDA GPU detected" : "Loading…";
 
   const cpuPct = sysInfo?.cpu_percent ?? 0;
   const ramPct = sysInfo?.ram_percent ?? 0;
@@ -139,33 +262,83 @@ export function Dashboard() {
   const gpuUtilPct = sysInfo?.gpu_utilization_pct ?? 0;
 
   return (
-    <div className="min-h-full p-4 md:p-6 space-y-6 bg-[#181d23]">
+    <div
+      className="min-h-full p-4 md:p-6 space-y-5 animate-fade-in-up"
+      style={{ background: 'var(--surface-1)' }}
+    >
 
-      {/* Page header */}
+      {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-wide text-white/90">Dashboard</h1>
-          <div className="text-[13px] text-white/50 mt-0.5">Welcome back — here's what's happening in your workspace.</div>
+          <h1
+            className="leading-none mb-1"
+            style={{
+              fontFamily: 'var(--quasar-font-display)',
+              fontSize: '22px',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              color: 'var(--ink-primary)',
+            }}
+          >
+            Dashboard
+          </h1>
+          <div
+            className="text-[13px]"
+            style={{ fontFamily: 'var(--quasar-font-sans)', color: 'var(--ink-muted)' }}
+          >
+            Welcome back — here's what's happening in your workspace.
+          </div>
         </div>
-        <button className="bg-[#007bff] hover:bg-[#0069d9] text-white text-[13px] font-medium px-4 py-2 rounded shadow-[0_2px_10px_rgba(0,123,255,0.4)] transition-all flex items-center gap-1.5 focus:outline-none">
-          <Zap size={14} />
+        <button
+          className="text-[13px] font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition-all focus:outline-none"
+          style={{
+            fontFamily: 'var(--quasar-font-sans)',
+            background: 'var(--electric)',
+            color: '#0A0E14',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: 'var(--glow-electric)',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--electric-bright)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'var(--electric)')}
+        >
+          <Zap size={13} />
           New Project
         </button>
       </div>
 
-      {/* ── Welcome splash (first-time empty state) ── */}
+      {/* ── Welcome splash (empty state) ── */}
       {stats !== null && !stats.dataset && stats.models.length === 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center space-y-3 animate-fade-in-up">
-          <Sparkles size={36} className="mx-auto" style={{ color: "rgba(0,240,255,0.35)" }} />
-          <h2 className="text-lg font-semibold text-white/80">Welcome to Quasar Studio</h2>
-          <p className="text-sm text-white/40 max-w-md mx-auto">
+        <div
+          className="rounded-xl p-8 text-center space-y-3 animate-fade-in-up"
+          style={{ border: '1px solid var(--surface-3)', background: 'rgba(58,160,255,0.03)' }}
+        >
+          <Sparkles
+            size={34}
+            className="mx-auto"
+            style={{ color: 'var(--electric-dim)' }}
+          />
+          <h2
+            style={{
+              fontFamily: 'var(--quasar-font-display)',
+              fontSize: '18px',
+              fontWeight: 700,
+              color: 'var(--ink-primary)',
+            }}
+          >
+            Welcome to Quasar Studio
+          </h2>
+          <p
+            className="text-sm max-w-md mx-auto"
+            style={{ fontFamily: 'var(--quasar-font-sans)', color: 'var(--ink-muted)' }}
+          >
             Load a dataset to get started, then build an ML pipeline or design a neural network.
           </p>
         </div>
       )}
 
-      {/* ── Stat Cards (Restored from old) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Database}
           label="Dataset"
@@ -173,7 +346,7 @@ export function Dashboard() {
           sub={stats?.dataset
             ? `${stats.dataset.filename} · ${stats.dataset.rows.toLocaleString()} rows · ${stats.dataset.columns} cols`
             : "No dataset loaded"}
-          bgIcon="#007bff"
+          accentColor="var(--electric)"
         />
         <StatCard
           icon={Brain}
@@ -189,7 +362,7 @@ export function Dashboard() {
                 : `${best.n_clusters_found ?? "?"} clusters`;
             return `Last: ${best.algorithm?.replace(/_/g, " ")} · ${metric}`;
           })()}
-          bgIcon="#17C2D7"
+          accentColor="var(--cyan)"
         />
         <StatCard
           icon={GitBranch}
@@ -200,143 +373,185 @@ export function Dashboard() {
             : stats?.pipeline_success === false
               ? "Some nodes failed"
               : "No pipeline executed"}
-          bgIcon="#F39C12"
+          accentColor="var(--warning)"
         />
         <StatCard
-          icon={Cpu} label={gpuLabel} value={gpuValue} sub={gpuSub}
-          bgIcon="#9367B4"
+          icon={Cpu}
+          label={gpuLabel}
+          value={gpuValue}
+          sub={gpuSub}
+          accentColor="var(--magenta)"
         />
       </div>
 
       {/* ── Middle row ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {/* Recent Activity */}
-        <div className="col-span-1 lg:col-span-2 bg-[#222a35] border border-white/5 rounded-xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-white/5 text-[13px] font-semibold text-white/80 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Activity size={16} className="text-[#007bff]" />
-              Recent Activity
-            </div>
-            <button className="text-white/40 hover:text-white transition-colors">
-               <MoreHorizontal size={16} />
-            </button>
-          </div>
-
-          {(() => {
-            const items: React.ReactNode[] = [];
-            if (stats?.models && stats.models.length > 0) {
-              [...stats.models].reverse().forEach((m, i) => {
-                const metric = m.task === "classification"
-                  ? `${((m.accuracy ?? 0) * 100).toFixed(1)}% accuracy`
-                  : m.task === "regression"
-                    ? `R² ${m.r2?.toFixed(3) ?? "—"}`
-                    : `${m.n_clusters_found ?? "?"} clusters`;
+        <div className="col-span-1 lg:col-span-2">
+          <SectionCard
+            title="Recent Activity"
+            icon={Activity}
+            iconColor="var(--electric)"
+            action={
+              <button
+                style={{ color: 'var(--ink-dim)', background: 'none', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink-primary)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-dim)')}
+              >
+                <MoreHorizontal size={15} />
+              </button>
+            }
+          >
+            {(() => {
+              const items: React.ReactNode[] = [];
+              if (stats?.models && stats.models.length > 0) {
+                [...stats.models].reverse().forEach((m, i) => {
+                  const metric = m.task === "classification"
+                    ? `${((m.accuracy ?? 0) * 100).toFixed(1)}% accuracy`
+                    : m.task === "regression"
+                      ? `R² ${m.r2?.toFixed(3) ?? "—"}`
+                      : `${m.n_clusters_found ?? "?"} clusters`;
+                  items.push(
+                    <ActivityItem
+                      key={`model-${i}`}
+                      icon={<Brain size={15} />}
+                      title="Model training complete"
+                      sub={`${m.algorithm?.replace(/_/g, " ")} · ${metric}`}
+                      time="This session"
+                      accentColor="var(--magenta)"
+                      status="Done"
+                    />
+                  );
+                });
+              }
+              if (stats?.dataset) {
                 items.push(
                   <ActivityItem
-                    key={`model-${i}`}
-                    icon={<Brain size={16} />}
-                    title="Model training complete"
-                    sub={`${m.algorithm?.replace(/_/g, " ")} · ${metric}`}
+                    key="dataset"
+                    icon={<BarChart2 size={15} />}
+                    title="Dataset loaded"
+                    sub={`${stats.dataset.filename} · ${stats.dataset.rows.toLocaleString()} rows · ${stats.dataset.columns} cols`}
                     time="This session"
-                    statusColor="#9367B4"
-                    status="Done"
+                    accentColor="var(--cyan)"
+                    status="Ready"
                   />
                 );
-              });
-            }
-            if (stats?.dataset) {
-              items.push(
-                <ActivityItem
-                  key="dataset"
-                  icon={<BarChart2 size={16} />}
-                  title="Dataset loaded"
-                  sub={`${stats.dataset.filename} · ${stats.dataset.rows.toLocaleString()} rows · ${stats.dataset.columns} cols`}
-                  time="This session"
-                  statusColor="#17C2D7"
-                  status="Ready"
-                />
-              );
-            }
-            if (items.length === 0) {
-              return (
-                <div className="px-5 py-8 text-center text-white/30 text-[13px]">
-                  No activity yet — load a dataset or run a pipeline.
-                </div>
-              );
-            }
-            return items;
-          })()}
-          <div className="px-5 py-3 text-center bg-white/5">
-             <button className="text-[12px] font-medium text-[#007bff] hover:text-[#0056b3]">View all activity</button>
-          </div>
+              }
+              if (items.length === 0) {
+                return (
+                  <div
+                    className="px-5 py-8 text-center text-[13px]"
+                    style={{ fontFamily: 'var(--quasar-font-sans)', color: 'var(--ink-dim)' }}
+                  >
+                    No activity yet — load a dataset or run a pipeline.
+                  </div>
+                );
+              }
+              return items;
+            })()}
+            <div
+              className="px-5 py-3 text-center"
+              style={{ background: 'rgba(255,255,255,0.02)' }}
+            >
+              <button
+                className="text-[12px] font-medium transition-colors"
+                style={{ fontFamily: 'var(--quasar-font-sans)', color: 'var(--electric)', background: 'none', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--electric-bright)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--electric)')}
+              >
+                View all activity
+              </button>
+            </div>
+          </SectionCard>
         </div>
 
-        {/* Right column: Resources + Quick Actions */}
-        <div className="col-span-1 flex flex-col gap-6">
+        {/* Right column */}
+        <div className="col-span-1 flex flex-col gap-5">
 
           {/* System Resources */}
-          <div className="bg-[#222a35] border border-white/5 rounded-xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-               <div className="flex items-center gap-2 text-[13px] font-semibold text-white/80">
-                 <Server size={16} className="text-[#17C2D7]" />
-                 System Resources
-               </div>
-               <div className="w-2 h-2 rounded-full bg-[#28a745] shadow-[0_0_8px_rgba(40,167,69,0.8)] animate-pulse" />
-            </div>
-            <div className="pt-2">
+          <SectionCard
+            title="System Resources"
+            icon={Server}
+            iconColor="var(--cyan)"
+            action={
+              <div
+                className="w-2 h-2 rounded-full animate-pulse"
+                style={{ background: 'var(--success)', boxShadow: '0 0 8px rgba(34,197,94,0.8)' }}
+              />
+            }
+          >
+            <div className="p-5">
               {sysInfo?.gpu_available ? (
                 <>
-                  <ResourceBar label={`GPU — ${sysInfo.gpu_name ?? "CUDA"}`} value={gpuUtilPct} color="#007bff" />
-                  <ResourceBar label={`VRAM ${sysInfo.gpu_memory_total_mb ? (sysInfo.gpu_memory_total_mb / 1024).toFixed(0) + " GB" : ""}`} value={vramPct} color="#17C2D7" />
+                  <ResourceBar label={`GPU — ${sysInfo.gpu_name ?? "CUDA"}`} value={gpuUtilPct} color="var(--electric)" />
+                  <ResourceBar
+                    label={`VRAM ${sysInfo.gpu_memory_total_mb ? (sysInfo.gpu_memory_total_mb / 1024).toFixed(0) + " GB" : ""}`}
+                    value={vramPct}
+                    color="var(--cyan)"
+                  />
                 </>
               ) : (
-                <ResourceBar label="GPU — Not Available" value={0} color="#007bff" />
+                <ResourceBar label="GPU — Not Available" value={0} color="var(--electric)" />
               )}
-              <ResourceBar label={`CPU${sysInfo?.cpu_count ? ` (${sysInfo.cpu_count} cores)` : ""}`} value={cpuPct} color="#9367B4" />
-              <ResourceBar label={`RAM${sysInfo?.ram_total_gb ? ` ${sysInfo.ram_total_gb} GB` : ""}`} value={ramPct} color="#F39C12" />
+              <ResourceBar
+                label={`CPU${sysInfo?.cpu_count ? ` (${sysInfo.cpu_count} cores)` : ""}`}
+                value={cpuPct}
+                color="var(--magenta)"
+              />
+              <ResourceBar
+                label={`RAM${sysInfo?.ram_total_gb ? ` ${sysInfo.ram_total_gb} GB` : ""}`}
+                value={ramPct}
+                color="var(--warning)"
+              />
             </div>
-          </div>
+          </SectionCard>
 
           {/* Quick Actions */}
-          <div className="bg-[#222a35] border border-white/5 rounded-xl p-4 shadow-sm flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-3 px-1">Quick Actions</p>
-            <div className="space-y-1">
-              <QuickAction icon={Database} label="Import Dataset" sub="CSV or XLSX" color="#007bff" />
-              <QuickAction icon={GitBranch} label="New Pipeline" sub="Visual editor" color="#17C2D7" />
-              <QuickAction icon={Brain} label="Train Model" sub="AutoML or custom" color="#9367B4" />
+          <SectionCard
+            title="Quick Actions"
+            icon={Zap}
+            iconColor="var(--electric)"
+          >
+            <div className="p-3 space-y-1">
+              <QuickAction icon={Database}  label="Import Dataset" sub="CSV or XLSX"        color="var(--electric)" />
+              <QuickAction icon={GitBranch} label="New Pipeline"   sub="Visual editor"      color="var(--cyan)" />
+              <QuickAction icon={Brain}     label="Train Model"    sub="AutoML or custom"   color="var(--magenta)" />
             </div>
-          </div>
+          </SectionCard>
+
         </div>
       </div>
 
-      {/* ── Bottom row: Model Leaderboard (Restored and Oculux-ified) ── */}
-      <div className="bg-[#222a35] border border-white/5 rounded-xl overflow-hidden shadow-sm">
-        
-        <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-           <div className="flex items-center gap-2 text-[13px] font-semibold text-white/80">
-             <TrendingUp size={16} className="text-[#007bff]" />
-             Model Leaderboard
-           </div>
-        </div>
-
+      {/* ── Model Leaderboard ── */}
+      <SectionCard
+        title="Model Leaderboard"
+        icon={TrendingUp}
+        iconColor="var(--electric)"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-white/10 text-[11px] text-white/40 uppercase tracking-wider bg-white/5">
-                <th className="px-5 py-3 font-semibold">Model</th>
-                <th className="px-5 py-3 font-semibold">Dataset</th>
-                <th className="px-5 py-3 font-semibold">Algorithm</th>
-                <th className="px-5 py-3 font-semibold">Accuracy</th>
-                <th className="px-5 py-3 font-semibold">F1 Score</th>
-                <th className="px-5 py-3 font-semibold">Status</th>
-                <th className="px-5 py-3 font-semibold">Trained</th>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'var(--surface-3)' }}>
+                {["Model", "Dataset", "Algorithm", "Accuracy", "F1 Score", "Status", "Trained"].map((h) => (
+                  <th
+                    key={h}
+                    className="px-5 py-3"
+                    style={{ fontFamily: 'var(--quasar-font-mono)', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--ink-dim)', fontWeight: 500 }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="text-[13px] text-white/80">
+            <tbody>
               {!stats || stats.models.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-white/30 text-[13px]">
+                  <td
+                    colSpan={7}
+                    className="px-5 py-8 text-center text-[13px]"
+                    style={{ fontFamily: 'var(--quasar-font-sans)', color: 'var(--ink-dim)' }}
+                  >
                     No models trained yet — run a pipeline with a Train Model or Cluster Model node.
                   </td>
                 </tr>
@@ -353,33 +568,62 @@ export function Dashboard() {
                     : 50;
                 const f1Display = m.f1 != null ? m.f1.toFixed(3) : m.silhouette != null ? m.silhouette.toFixed(3) : "—";
                 return (
-                  <tr key={m.node_id} className="border-b border-white/5 hover:bg-white/5 transition-colors last:border-0">
+                  <tr
+                    key={m.node_id}
+                    className="transition-colors last:border-0"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
                     <td className="px-5 py-3">
-                      <span className="font-mono text-[#17C2D7]">{m.node_id}</span>
+                      <span style={{ fontFamily: 'var(--quasar-font-mono)', fontSize: '13px', color: 'var(--cyan)' }}>
+                        {m.node_id}
+                      </span>
                     </td>
-                    <td className="px-5 py-3 text-white/60">{stats.dataset?.filename ?? "—"}</td>
-                    <td className="px-5 py-3 text-white/60">{m.algorithm?.replace(/_/g, " ")}</td>
+                    <td className="px-5 py-3" style={{ fontFamily: 'var(--quasar-font-sans)', fontSize: '13px', color: 'var(--ink-muted)' }}>
+                      {stats.dataset?.filename ?? "—"}
+                    </td>
+                    <td className="px-5 py-3" style={{ fontFamily: 'var(--quasar-font-sans)', fontSize: '13px', color: 'var(--ink-muted)' }}>
+                      {m.algorithm?.replace(/_/g, " ")}
+                    </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-12 h-1 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#17C2D7]" style={{ width: `${accPct}%` }} />
+                        <div
+                          className="w-12 h-1 rounded-full overflow-hidden"
+                          style={{ background: 'var(--surface-3)' }}
+                        >
+                          <div
+                            className="h-full"
+                            style={{ width: `${accPct}%`, background: 'var(--cyan)' }}
+                          />
                         </div>
-                        <span className="font-semibold">{accValue}</span>
+                        <span style={{ fontFamily: 'var(--quasar-font-mono)', fontSize: '13px', fontWeight: 600, color: 'var(--ink-primary)' }}>
+                          {accValue}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-white/60 font-mono">{f1Display}</td>
+                    <td className="px-5 py-3" style={{ fontFamily: 'var(--quasar-font-mono)', fontSize: '13px', color: 'var(--ink-muted)' }}>
+                      {f1Display}
+                    </td>
                     <td className="px-5 py-3">
                       <span
-                        className="inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold tracking-widest uppercase border"
-                        style={{ color: "#9367B4", borderColor: "#9367B4" }}
+                        className="inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold tracking-widest uppercase"
+                        style={{
+                          fontFamily: 'var(--quasar-font-mono)',
+                          color: 'var(--success)',
+                          border: '1px solid var(--success)',
+                        }}
                       >
                         <CheckCircle2 size={10} className="mr-1" />
                         Ready
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-[11px] text-white/40">
-                      <div className="flex items-center gap-1.5">
-                        <Clock size={12} className="opacity-70" /> This session
+                    <td className="px-5 py-3">
+                      <div
+                        className="flex items-center gap-1.5 text-[11px]"
+                        style={{ fontFamily: 'var(--quasar-font-mono)', color: 'var(--ink-dim)' }}
+                      >
+                        <Clock size={11} className="opacity-70" /> This session
                       </div>
                     </td>
                   </tr>
@@ -388,8 +632,8 @@ export function Dashboard() {
             </tbody>
           </table>
         </div>
-      </div>
-      
+      </SectionCard>
+
     </div>
   );
 }
